@@ -2,6 +2,9 @@
 # by priority
 # by intensity
 
+#Only for SC, test run
+# see results_4+
+
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
@@ -20,15 +23,7 @@ res_sc <- read_csv(file.path(input_folder,
                           'main_results_from_sql_SC.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-# res_cc_sn <- read_csv(file.path(input_folder, 
-#                                 'main_results_from_sql_CC_SN.csv')) %>% 
-#   mutate(HUC12 = as.character(HUC12))
-# res_nc <- read_csv(file.path(input_folder, 
-#                                 'main_results_from_sql_NC.csv')) %>% 
-#   mutate(HUC12 = as.character(HUC12))
-
 res <- res_sc #for now, until others available
-#res <- bind_rows(res_sc, res_cc_sn, res_ns)
 
 # #For mapping
 hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
