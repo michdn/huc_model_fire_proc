@@ -22,8 +22,10 @@
 # 4. In one file window explorer, navigate to 'tahoe\mas_sim_outputs\fires200\'. In other explore, navigate to the folder you want it on your computer. 
 #    Drag and drop the appropriate tar file to copy it down. 
 #
-# Note: SC was approx 2.6 GB. 
+# Note: SC was approx 2.6 GB; NC 4.1 GB; SN_CC 9 GB
 # Note: SC took about 4.2 hours for this script
+#       NC took about 8.2 hours
+#       SN_CC took about x hours
 ##################################
 
 
@@ -70,7 +72,7 @@ bt_hacfl_ave_fun <- function(df, idx){
 ### User settings ---------------------------------------------
 
 # where to find the sql output files
-reg_group <- "SC"
+reg_group <- "SN_CC_part4"
 results_folder <- file.path("results", reg_group) 
 
 # where to write csv summary files
@@ -144,8 +146,21 @@ for (i in seq_along(sql_files)){ #seq_along(sql_files) #33847:51840
   
   this_cfl_raw <- dbGetQuery(this_db, 'SELECT t1.huc_id, t1.time_horizon, t1.mas_scenario, t5.fl_bin_lower, t5.fl_bin_upper, AVG(t5.huc_burned_frac_in_fl_bin) AS burned_frac_ave FROM mas_metadata AS t1, ha_cfl_hist_series AS t5 GROUP BY fl_bin_lower, fl_bin_upper')
   
+  #at least one huc fails to have any data, including metadata
+  #  need to fill from filename
+  if (is.na(this_row_raw[["huc_id"]])){
+    this_scenario <- basename(dirname(this_sql_file))
+    this_year <- basename(dirname(dirname(this_sql_file)))
+    this_huc_id <- basename(dirname(dirname(dirname(this_sql_file))))
+    
+    this_row_raw["huc_id"] <- this_huc_id
+    this_row_raw["time_horizon"] <- this_year
+    this_row_raw["mas_scenario"] <- this_scenario
+  } 
+  
   #add region, rename fields
   this_row <- run_split_rename(this_row_raw)
+  
   
   #at least once in SC, cft hist series was empty and caused an error
   # this prevents an error and will write a line with NA data values so we can 
@@ -165,25 +180,48 @@ for (i in seq_along(sql_files)){ #seq_along(sql_files) #33847:51840
   #calculate and add bootstrap CIs for HaCBP and HaCFL
   #hacbp
   tbl_hacbp <- dbReadTable(this_db, "ha_cbp_series")
-  bt_hacbp_res <- boot(data = tbl_hacbp, 
-                       statistic = bt_hacbp_ave_fun, 
-                       R = 1000)
-  bt_hacbp_ci <- boot.ci(boot.out = bt_hacbp_res, 
-                         type = c("norm"))
+  
+  if (nrow(tbl_hacbp) > 0){
+    bt_hacbp_res <- boot(data = tbl_hacbp, 
+                         statistic = bt_hacbp_ave_fun, 
+                         R = 1000)
+    bt_hacbp_ci <- boot.ci(boot.out = bt_hacbp_res, 
+                           type = c("norm"))
+    #column append results
+    this_row_ci <- this_row %>% 
+      add_column("hacbp_ci_low" = bt_hacbp_ci$normal[[2]],
+                 "hacbp_ci_high" = bt_hacbp_ci$normal[[3]])
+  } else {
+    #no rows, HUC had some kind of model failure running
+    # set to NA
+    this_row_ci <- this_row %>% 
+      add_column("hacbp_ci_low" = NA_real_,
+                 "hacbp_ci_high" = NA_real_)
+  }
+  
+  
   #hacfl
   tbl_hacfl <- dbReadTable(this_db, "ha_cfl_series")
-  bt_hacfl_res <- boot(data = tbl_hacfl, 
-                       statistic = bt_hacfl_ave_fun, 
-                       R = 1000)
-  bt_hacfl_ci <- boot.ci(boot.out = bt_hacfl_res, 
-                         type = c("norm"))
-  #column append results
-  this_row_ci <- this_row %>% 
-    add_column("hacbp_ci_low" = bt_hacbp_ci$normal[[2]],
-               "hacbp_ci_high" = bt_hacbp_ci$normal[[3]],
-               "hacfl_ci_low" = bt_hacfl_ci$normal[[2]],
-               "hacfl_ci_high" = bt_hacfl_ci$normal[[3]])
   
+  if (nrow(tbl_hacfl) > 0){
+    bt_hacfl_res <- boot(data = tbl_hacfl, 
+                         statistic = bt_hacfl_ave_fun, 
+                         R = 1000)
+    bt_hacfl_ci <- boot.ci(boot.out = bt_hacfl_res, 
+                           type = c("norm"))
+    #column append results
+    this_row_ci <- this_row_ci %>% 
+      add_column("hacfl_ci_low" = bt_hacfl_ci$normal[[2]],
+                 "hacfl_ci_high" = bt_hacfl_ci$normal[[3]])
+  } else {
+    #no rows, HUC had some kind of model failure running
+    # set to NA
+    this_row_ci <- this_row_ci %>% 
+      add_column("hacfl_ci_low" = NA_real_,
+                 "hacfl_ci_high" = NA_real_)
+    
+  }
+
   
   #add data to collector lists
   main_collector[[i]] <- this_row_ci
@@ -193,6 +231,11 @@ for (i in seq_along(sql_files)){ #seq_along(sql_files) #33847:51840
   #disconnect from database
   dbDisconnect(this_db)
   
+  #print progress every 2000 files
+  if (i%%2000 == 0){
+    print(paste0(i, " of ", num_sql, " at ", Sys.time()))
+  }
+  
 } #end loop
 
 #row bind list items together, respectively
@@ -201,15 +244,15 @@ all_cft_data <- do.call(bind_rows, cft_collector)
 all_cfl_data <- do.call(bind_rows, cfl_collector)
 
 #save out collected data
-write_csv(all_main_data, 
-          file.path(output_folder, 
+write_csv(all_main_data,
+          file.path(output_folder,
                     paste0('main_results_from_sql_', reg_group, '.csv')))
-write_csv(all_cft_data, 
-          file.path(output_folder, 
-                    paste0('cft_results_from_sql_', reg_group, '.csv'))) 
-write_csv(all_cfl_data, 
-          file.path(output_folder, 
-                    paste0('cfl_results_from_sql_', reg_group, '.csv'))) 
+write_csv(all_cft_data,
+          file.path(output_folder,
+                    paste0('cft_results_from_sql_', reg_group, '.csv')))
+write_csv(all_cfl_data,
+          file.path(output_folder,
+                    paste0('cfl_results_from_sql_', reg_group, '.csv')))
 
 #end times
 (time_end <- Sys.time())
