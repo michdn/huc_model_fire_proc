@@ -38,6 +38,28 @@ hucs_simpl <- sf::st_simplify(hucs_shp, preserveTopology = TRUE, dTolerance = 20
 states <- st_read("data/tl_2023_us_state/tl_2023_us_state.shp")
 ca <- states %>% filter(STUSPS == "CA")
 
+### Reformatting and factoring ------------------------------
+
+# Want priority 'RFFC' to show as 'Hybrid'
+# want priority order: 'Fire', 'WUI', 'Hybrid'
+# want intensity order: '500k', '1m', '2m'
+
+res <- res %>% 
+  #change name to Hybrid
+  # name change will already be done in later versions of datacube,
+  # but won't matter if here as well, it just won't do anything
+  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) %>% 
+  #for graphing in the correct order
+  #make factor with set order (priority)
+  mutate(Priority = as.factor(Priority),
+         Priority = forcats::fct_relevel(Priority,
+                                            "Fire", "WUI", "Hybrid"),
+         #make factor with set order (intensity))
+         TxIntensity = as.factor(TxIntensity),
+         TxIntensity = forcats::fct_relevel(TxIntensity,
+                                             "500k", "1m", "2m"))
+
+
 ### Year Data Prep -------------------------------------------
 
 # 1. Make year datasets
@@ -176,12 +198,12 @@ graph_cbp_priority_cut <- function(df, legend_title, cuts){
     theme_bw() +
     theme(panel.grid = element_blank(),
           panel.background = element_blank(),
-          legend.title = element_text(size = 12),
+          legend.title = element_text(size = 11),
           legend.text = element_text(size = 10),
           strip.background = element_blank(),
           strip.text = element_text(size = 13),
           axis.text = element_text(family = 'sans'),
-          legend.position = "bottom",
+          legend.position = "right",
           legend.direction = "vertical") +
     ggspatial::annotation_scale(
       location = "bl", bar_cols = c("grey50", "white")) +
@@ -210,12 +232,12 @@ cbp_020_priority_plot <- graph_cbp_priority_cut(res020,
 ggsave(plot = cbp_05_priority_plot,
        filename = "hacbp_yr5_yr0_priority.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 ggsave(plot = cbp_020_priority_plot,
        filename = "hacbp_yr20_yr0_priority.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 
 ### Active crown fire by PRIORITY -------------------------------------------
@@ -287,12 +309,12 @@ graph_acf_priority_cut <- function(df, legend_title, cuts){
     theme_bw() +
     theme(panel.grid = element_blank(),
           panel.background = element_blank(),
-          legend.title = element_text(size = 12),
+          legend.title = element_text(size = 11),
           legend.text = element_text(size = 10),
           strip.background = element_blank(),
           strip.text = element_text(size = 13),
           axis.text = element_text(family = 'sans'),
-          legend.position = "bottom",
+          legend.position = "right",
           legend.direction = "vertical") +
     ggspatial::annotation_scale(
       location = "bl", bar_cols = c("grey50", "white")) +
@@ -318,12 +340,12 @@ acf_020_priority_plot <- graph_acf_priority_cut(res020,
 ggsave(plot = acf_05_priority_plot,
        filename = "actcrown_yr5_yr0_priority.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 ggsave(plot = acf_020_priority_plot,
        filename = "actcrown_yr20_yr0_priority.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 
 ### CBP by INTENSITY -------------------------------------------
@@ -385,12 +407,12 @@ graph_cbp_intensity_cut <- function(df, legend_title, cuts){
     theme_bw() +
     theme(panel.grid = element_blank(),
           panel.background = element_blank(),
-          legend.title = element_text(size = 12),
+          legend.title = element_text(size = 11),
           legend.text = element_text(size = 10),
           strip.background = element_blank(),
           strip.text = element_text(size = 13),
           axis.text = element_text(family = 'sans'),
-          legend.position = "bottom",
+          legend.position = "right",
           legend.direction = "vertical") +
     ggspatial::annotation_scale(
       location = "bl", bar_cols = c("grey50", "white")) +
@@ -416,12 +438,12 @@ cbp_020_intensity_plot <- graph_cbp_intensity_cut(res020,
 ggsave(plot = cbp_05_intensity_plot,
        filename = "hacbp_yr5_yr0_intensity.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 ggsave(plot = cbp_020_intensity_plot,
        filename = "hacbp_yr20_yr0_intensity.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 
 
@@ -488,12 +510,12 @@ graph_acf_intensity_cut <- function(df, legend_title, cuts){
     theme_bw() +
     theme(panel.grid = element_blank(),
           panel.background = element_blank(),
-          legend.title = element_text(size = 12),
+          legend.title = element_text(size = 11),
           legend.text = element_text(size = 10),
           strip.background = element_blank(),
           strip.text = element_text(size = 13),
           axis.text = element_text(family = 'sans'),
-          legend.position = "bottom",
+          legend.position = "right",
           legend.direction = "vertical") +
     ggspatial::annotation_scale(
       location = "bl", bar_cols = c("grey50", "white")) +
@@ -522,12 +544,12 @@ acf_020_intensity_plot <- graph_acf_intensity_cut(
 ggsave(plot = acf_05_intensity_plot,
        filename = "actcrown_yr5_yr0_intensity.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 ggsave(plot = acf_020_intensity_plot,
        filename = "actcrown_yr20_yr0_intensity.jpg",
        path = "plots",
-       width = 9, height = 6, units = "in")
+       width = 10, height = 4, units = "in")
 
 
 
