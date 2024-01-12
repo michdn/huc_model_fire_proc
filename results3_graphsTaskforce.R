@@ -9,6 +9,8 @@
 
 #"For flame length, could really be the same. For % crown fire, it would be the change in proportion of category 3 (active crown fire)"
 
+# Uses output of results2_datacube
+
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(

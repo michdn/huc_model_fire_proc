@@ -139,21 +139,7 @@ fvs <- read_csv(file.path(input_folder,
 
 ### Data processing ------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#TODO Check with run added back in
 
 
 
@@ -176,18 +162,14 @@ ft_wide
 
 #join with main results
 res_fire <- main_full %>% 
-  #drop extra run field that we can't join on (b/c didn't exist in fire data)
-  select(-run) %>% 
   left_join(ft_wide, 
-            by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "Year"))
+            by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
 
 
 #join FVS results with fire results
 res_all <- fvs %>% 
-  inner_join(res_fire %>% 
-               #drop extra run field that we can't join on (b/c didn't exist in fire data)
-               select(-run),
-            by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "Year"))
+  inner_join(res_fire,
+             by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
   
 
 #rename Priority RFFC to Hybrid
