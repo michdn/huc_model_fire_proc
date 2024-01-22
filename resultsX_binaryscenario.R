@@ -37,8 +37,7 @@ input_folder <- 'results_csv'
 ### Base Data import -------------------------------------------
 
 res <- read_csv(file.path(input_folder, 
-                          'testing_qaqc',
-                          'datacube_20230102a.csv')) %>% 
+                          'datacube_expanded_20240119.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 
@@ -48,11 +47,11 @@ res <- read_csv(file.path(input_folder,
 
 # Want priority 'RFFC' to show as 'Hybrid'
 
-res <- res %>% 
-  #change name to Hybrid
-  # name change will already be done in later versions of datacube,
-  # but won't matter if here as well, it just won't do anything
-  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) 
+# res <- res %>% 
+#   #change name to Hybrid
+#   # name change will already be done in later versions of datacube,
+#   # but won't matter if here as well, it just won't do anything
+#   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) 
 
 #get total number of HUCs per region, so that can calculate % of region later
 reg_counts <- res %>% select(RRK, HUC12) %>% distinct() %>% 
@@ -105,40 +104,64 @@ res020 <- res2024 %>%
   #Note: .x is 2024, .y is 2044
   mutate(hacbp_future_higher = ifelse(hacbp_ci_low.y > hacbp_ci_high.x, 1, 0),
          hacbp_future_lower = ifelse(hacbp_ci_high.y < hacbp_ci_low.x, 1, 0), 
-         hacbp_future_lte = ifelse(hacbp_ci_low.y <= hacbp_ci_high.x, 1, 0),
          #flame length
          hacfl_future_higher = ifelse(hacfl_ci_low.y > hacfl_ci_high.x, 1, 0),
-         hacfl_future_lower = ifelse(hacfl_ci_high.y < hacfl_ci_low.x, 1, 0),
-         hacfl_future_lte = ifelse(hacfl_ci_low.y <= hacfl_ci_high.x, 1, 0)) %>% 
-  select(HUC12, RRK, region_hucs, Priority, TxIntensity, TxType,  
-         hacbp_future_higher, hacbp_future_lower, hacbp_future_lte,
-         hacfl_future_higher, hacfl_future_lower, hacfl_future_lte)
+         hacfl_future_lower = ifelse(hacfl_ci_high.y < hacfl_ci_low.x, 1, 0)) 
+
+
+ # select(HUC12, RRK, region_hucs, Priority, TxIntensity, TxType,  
+ #         hacbp_future_higher, hacbp_future_lower,
+ #         hacfl_future_higher, hacfl_future_lower)
+
+#hacbp_future_lte = ifelse(hacbp_ci_low.y <= hacbp_ci_high.x, 1, 0),
+#         hacfl_future_lte = ifelse(hacfl_ci_low.y <= hacfl_ci_high.x, 1, 0)) %>% 
 
 
 ### Summaries -------------------------------------------
 
 res05 %>% 
   summarize(num_higher = sum(hacbp_future_higher, na.rm = TRUE),
-            num_lower = sum(hacbp_future_lower, na.rm = TRUE),
-            num_lte = sum(hacbp_future_lte, na.rm = TRUE))
+            num_lower = sum(hacbp_future_lower, na.rm = TRUE))
+
+# num_higher num_lower num_lte
+# <dbl>     <dbl>   <dbl>
+# 516       337   76069
+
+(516+337)/76599*100
+#1.11
+
+#OLD
 # num_higher num_lower num_lte
 # <dbl>     <dbl>   <dbl>
 #   1        508       335   76072
 
+#,num_lte = sum(hacbp_future_lte, na.rm = TRUE)
+
 res020 %>% 
   summarize(num_higher = sum(hacbp_future_higher, na.rm = TRUE),
-            num_lower = sum(hacbp_future_lower, na.rm = TRUE),
-            num_lte = sum(hacbp_future_lte, na.rm = TRUE))
+            num_lower = sum(hacbp_future_lower, na.rm = TRUE))
+
+# num_higher num_lower num_lte
+# <dbl>     <dbl>   <dbl>
+# 4874      1499   71712
+
+(4874+1499)/76599*100
+#8.31
+
+#OLD
 # num_higher num_lower num_lte
 # <dbl>     <dbl>   <dbl>
 #   1       4838      1501   71745
 
+#,num_lte = sum(hacbp_future_lte, na.rm = TRUE)
 
 
 res020 %>% 
   summarize(num_higher = sum(hacfl_future_higher, na.rm = TRUE),
             num_lower = sum(hacfl_future_lower, na.rm = TRUE),
             num_lte = sum(hacfl_future_lte, na.rm = TRUE))
+
+#OLD
 # num_higher num_lower num_lte
 # <dbl>     <dbl>   <dbl>
 #   1       3711     76583   72872
@@ -152,6 +175,7 @@ sum020 <- res020 %>%
             num_higher = sum(hacbp_future_higher, na.rm = TRUE),
             num_lte = sum(hacbp_future_lte, na.rm = TRUE),
             .groups = "drop") #%>% 
+#TODO TODO This is incorrect. region_hucs times scenarios 27
   #mutate(perc_lower = num_lower / region_hucs * 100,
   #       perc_higher = num_higher / region_hucs * 100,
   #       perc_lte = num_lte / region_hucs * 100) 

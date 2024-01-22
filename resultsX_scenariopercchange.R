@@ -26,8 +26,7 @@ input_folder <- 'results_csv'
 ### Base Data import -------------------------------------------
 
 res <- read_csv(file.path(input_folder, 
-                          'testing_qaqc',
-                          'datacube_20230102a.csv')) %>% 
+                          'datacube_expanded_20230119.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 
@@ -35,11 +34,11 @@ res <- read_csv(file.path(input_folder,
 
 # Want priority 'RFFC' to show as 'Hybrid'
 
-res <- res %>% 
-  #change name to Hybrid
-  # name change will already be done in later versions of datacube,
-  # but won't matter if here as well, it just won't do anything
-  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) 
+# res <- res %>% 
+#   #change name to Hybrid
+#   # name change will already be done in later versions of datacube,
+#   # but won't matter if here as well, it just won't do anything
+#   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) 
 
 
 
