@@ -7,7 +7,7 @@
 # 
 # 0. Submit a ticket 1) to get access to bluejay, 2) '/mnt/tahoe/mas_sim_outputs/' mapped to bluejay
 #
-# 1. Ask Val or Jeff if they could tar up the region folder, e.g. tahoe\mas_sim_outputs\fires200\SC
+# 1. Option A) Ask Val or Jeff if they could tar up the region folder, e.g. tahoe\mas_sim_outputs\fires200\SC. See Step 4 for alternative. 
 #    Use 7zip to untar - https://www.7-zip.org/a/7z2301-x64.exe
 #
 # 2. Log into bluejay (10.1.30.113) via RDC and make sure that you have enabled drive sharing
@@ -21,11 +21,12 @@
 #
 # 4. In one file window explorer, navigate to 'tahoe\mas_sim_outputs\fires200\'. In other explore, navigate to the folder you want it on your computer. 
 #    Drag and drop the appropriate tar file to copy it down. 
+#    Option B) Alternatively, select the folder, and have 7Zip add to archive (tar). CHANGE the destination to be your laptop. 
 #
 # Note: SC was approx 2.6 GB; NC 4.1 GB; SN_CC 9 GB
 # Note: SC took about 4.2 hours for this script
 #       NC took about 8.2 hours
-#       SN_CC took about x hours
+#       SN_CC -split up into multiple folders
 ##################################
 
 
@@ -72,7 +73,9 @@ bt_hacfl_ave_fun <- function(df, idx){
 ### User settings ---------------------------------------------
 
 # where to find the sql output files
-reg_group <- "SN_CC_part4"
+# NC, SC, 
+# SN_CC_thru180201220206, SN_CC_thru180300100704, SN_CC_thru180500040805, SN_CC_thru180902060702
+reg_group <- "SN_CC_thru180902060702" 
 results_folder <- file.path("results", reg_group) 
 
 # where to write csv summary files

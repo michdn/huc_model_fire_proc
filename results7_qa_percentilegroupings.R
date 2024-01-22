@@ -17,43 +17,44 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-input_folder <- file.path('results_csv', 'testing_qaqc') 
+input_folder <- 'results_csv' # file.path('results_csv', 'testing_qaqc') 
 
 ### Base Data import -------------------------------------------
 
 res <- read_csv(file.path(input_folder, 
-                          'datacube_20230102a.csv')) %>% 
+                          'datacube_expanded_20240119.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 #to get treatment percentile groups
-hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+#hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 
 ### data prep ------------------------------
 
-# Want priority 'RFFC' to show as 'Hybrid'
-
-res <- res %>% 
-  #change name to Hybrid
-  # name change will already be done in later versions of datacube,
-  # but won't matter if here as well, it just won't do anything
-  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) 
-
-#TxBpPrc == for fire priority
-#TxRffcP == for RFFC (aka hybrid) priority
-#TxWPrct == for WUI priority
-res_hucs <- res %>%
-  left_join(hucs_shp %>% 
-              select(huc12, TxBpPrc, TxRffcP, TxWPrct), 
-            by = join_by("HUC12" == "huc12"))
+#now in expanded datacube
+# # Want priority 'RFFC' to show as 'Hybrid'
+# 
+# res <- res %>% 
+#   #change name to Hybrid
+#   # name change will already be done in later versions of datacube,
+#   # but won't matter if here as well, it just won't do anything
+#   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority)) 
+# 
+# #TxBpPrc == for fire priority
+# #TxRffcP == for RFFC (aka hybrid) priority
+# #TxWPrct == for WUI priority
+# res_hucs <- res %>%
+#   left_join(hucs_shp %>% 
+#               select(huc12, TxBpPrc, TxRffcP, TxWPrct), 
+#             by = join_by("HUC12" == "huc12"))
 
 
 ### Summarizing -------------------------------------------------
 
 #Fire
-fire <- res_hucs %>% 
+fire <- res %>% 
   filter(Priority == "Fire") %>% 
-  group_by(TxBpPrc, Priority, TxIntensity, TxType, Year) %>% 
+  group_by(RRK, TxBpPrc, Priority, TxIntensity, TxType, Year) %>% 
   summarize(count = n(),
             median_cbp = median(HaCBP, na.rm = TRUE),
             mean_cbp = mean(HaCBP, na.rm = TRUE),
@@ -71,9 +72,9 @@ fire <- res_hucs %>%
             max_acf = max(active_crown_fire_perc, na.rm = TRUE))
 
 #Hybrid
-hybrid <- res_hucs %>% 
+hybrid <- res %>% 
   filter(Priority == "Hybrid") %>% 
-  group_by(TxRffcP, Priority, TxIntensity, TxType, Year) %>% 
+  group_by(RRK, TxRffcP, Priority, TxIntensity, TxType, Year) %>% 
   summarize(count = n(),
             median_cbp = median(HaCBP, na.rm = TRUE),
             mean_cbp = mean(HaCBP, na.rm = TRUE),
@@ -91,9 +92,9 @@ hybrid <- res_hucs %>%
             max_acf = max(active_crown_fire_perc, na.rm = TRUE))
 
 #WUI
-wui <- res_hucs %>% 
+wui <- res %>% 
   filter(Priority == "WUI") %>% 
-  group_by(TxWPrct, Priority, TxIntensity, TxType, Year) %>% 
+  group_by(RRK, TxWPrct, Priority, TxIntensity, TxType, Year) %>% 
   summarize(count = n(),
             median_cbp = median(HaCBP, na.rm = TRUE),
             mean_cbp = mean(HaCBP, na.rm = TRUE),
@@ -114,13 +115,13 @@ wui <- res_hucs %>%
 
 
 write_csv(fire, 
-          file = file.path(input_folder, "percentilegroup_raw_summaries_fire.csv"))
+          file = file.path(input_folder, "percentilegroup_raw_summaries_fire_20240119.csv"))
 
 write_csv(hybrid, 
-          file = file.path(input_folder, "percentilegroup_raw_summaries_hybrid.csv"))
+          file = file.path(input_folder, "percentilegroup_raw_summaries_hybrid_20240119.csv"))
 
 write_csv(wui, 
-          file = file.path(input_folder, "percentilegroup_raw_summaries_wui.csv"))
+          file = file.path(input_folder, "percentilegroup_raw_summaries_wui_20240119.csv"))
 
 
 

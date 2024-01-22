@@ -1,18 +1,27 @@
 # Script to collate data, also for data cube
 
-#"Fire modeling outputs: burn probability, flame length, 
-#  % active crown fire, % passive crown fire, % surface fire"
-# plus CIs
+#Fire modeling outputs: burn probability, flame length, 
+#  % active crown fire, % passive crown fire, % surface fire
+# plus CIs?
+# add percentile groups
+# add FVS data
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
-  tidyverse)
+  tidyverse,
+  sf)
 
 ### User settings ---------------------------------------------
 
 input_folder <- 'results_csv'
 output_folder <- 'results_csv'
+
+### HUC data ----------------------------------------------------
+
+#to get treatment percentile groups
+hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+
 
 ### Main Data import & prep -------------------------------------------
 
@@ -26,16 +35,16 @@ main_nc <- read_csv(file.path(input_folder,
   mutate(HUC12 = as.character(HUC12))
 
 main_sn_cc1 <- read_csv(file.path(input_folder, 
-                                  'main_results_from_sql_SN_CC_part1.csv')) %>%
+                                  'main_results_from_sql_SN_CC_thru180201220206.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 main_sn_cc2 <- read_csv(file.path(input_folder, 
-                                  'main_results_from_sql_SN_CC_part2.csv')) %>%
+                                  'main_results_from_sql_SN_CC_thru180300100704.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 main_sn_cc3 <- read_csv(file.path(input_folder, 
-                                  'main_results_from_sql_SN_CC_part3.csv')) %>%
+                                  'main_results_from_sql_SN_CC_thru180500040805.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 main_sn_cc4 <- read_csv(file.path(input_folder, 
-                                'main_results_from_sql_SN_CC_part4.csv')) %>%
+                                'main_results_from_sql_SN_CC_thru180902060702.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 
 #bind
@@ -44,6 +53,19 @@ main <- bind_rows(main_sc, main_nc,
   #sort nicely
   arrange(RRK, HUC12, Priority, TxIntensity, TxType, Year)
 
+# expecting 2837
+main %>% pull(HUC12) %>% unique() %>% length()  
+
+# nominally 306396, missing are implicitly missing
+nrow(main)
+#306355, or 41 implicit missing
+
+#explicit missing
+main %>% filter(is.na(HaCBP))
+# zero
+
+
+## Expand to fill all implicit missing as explicit missing
 
 main_expand <- main %>% 
   #NOT runID b/c can't associate it to huc/region/priority/intensity/type without losing some combinations
@@ -67,20 +89,15 @@ main_full <- main_full %>%
   mutate(run = ifelse(missing_flag, run_update, run))
   
 
-#with full scenario run ID
-# for val, offshoot
-# main_full %>% 
-#   filter(missing_flag) %>%
-#   mutate(mas_scenario = paste(run, RRK, Priority, TxIntensity, TxType, sep="_")) %>% 
-#   select(HUC12, mas_scenario, run, Year, RRK, Priority, TxIntensity, TxType) %>% 
-#   arrange(RRK, HUC12, mas_scenario) %>% 
-#   write_csv(file.path(output_folder, 'missing_main_20230103.csv'))
-
-
 #remove missing_flag, select(-run_update)
 main_full <- main_full %>% 
   select(-missing_flag, -run_update)
   
+main_full %>% filter(is.na(HaCBP)) %>% View()
+#41, all SN Hybrid 1m trt 6, some HUCs missing all years. e.g. 180201210201
+main_full %>% filter(is.na(HaCBP)) %>% pull(HUC12) %>% unique()
+#15 HUCs affected
+
 
 ### Fire type Data import & prep -------------------------------------------
 
@@ -93,16 +110,16 @@ ft_nc <- read_csv(file.path(input_folder,
   mutate(HUC12 = as.character(HUC12))
 
 ft_sn_cc1 <- read_csv(file.path(input_folder, 
-                            'cft_results_from_sql_SN_CC_part1.csv')) %>%
+                            'cft_results_from_sql_SN_CC_thru180201220206.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 ft_sn_cc2 <- read_csv(file.path(input_folder, 
-                            'cft_results_from_sql_SN_CC_part2.csv')) %>%
+                            'cft_results_from_sql_SN_CC_thru180300100704.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 ft_sn_cc3 <- read_csv(file.path(input_folder, 
-                            'cft_results_from_sql_SN_CC_part3.csv')) %>%
+                            'cft_results_from_sql_SN_CC_thru180500040805.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 ft_sn_cc4 <- read_csv(file.path(input_folder, 
-                            'cft_results_from_sql_SN_CC_part4.csv')) %>%
+                            'cft_results_from_sql_SN_CC_thru180902060702.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 
 #bind
@@ -112,10 +129,12 @@ ft <- bind_rows(ft_sc, ft_nc,
   arrange(RRK, HUC12, Priority, TxIntensity, TxType, Year)
 
 
+ft %>% filter(is.na(burn_frac_ave))
+#0 explicit missing 
+nrow(ft) / 3
+#306355, same as main with implicit missing
 
-
-
-
+## FVS results --------------------------------------------------------------------
 
 
 #Anna's FVS results
@@ -123,24 +142,23 @@ fvs <- read_csv(file.path(input_folder,
                           'FVSprocessedOutputsHucs.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 
-# > nrow(fvs)
+nrow(fvs)
 # [1] 321624 ??
 
-# fvs_dupls <- fvs %>% group_by(HUC12, Priority, TxIntensity, TxType, Year) %>% filter(n()>1) %>% summarize(n=n()) %>% ungroup()
-# 
-# fvs_dupls %>% 
-#   left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) #%>% View()
-# 
-# fvs_dupls %>% 
-#   left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) %>% 
-#   select(HUC12, RRK) %>% 
-#   distinct()
+fvs_dupls <- fvs %>% group_by(HUC12, Priority, TxIntensity, TxType, Year) %>% filter(n()>1) %>% summarize(n=n()) %>% ungroup()
+ 
+fvs_dupls %>% 
+   left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) #%>% View()
+ 
+fvs_dupls %>% 
+   left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) %>% 
+   select(HUC12, RRK) %>% 
+   distinct()
+
+#duplicates will be dropped when I join fire data, will only keep HUCs in the regions as fire modeled
 
 
 ### Data processing ------------------------------------------
-
-#TODO Check with run added back in
-
 
 
 #pivot fire type results from longer to 
@@ -155,8 +173,7 @@ ft_wide <- ft %>%
   pivot_wider(
     id_cols = c(HUC12, RRK, Priority, TxIntensity, TxType, run, Year),
     names_from = type,
-    values_from = burn_frac_ave) %>% 
-  select(-unknown) #none were unknown, all NA
+    values_from = burn_frac_ave) 
 
 ft_wide
 
@@ -176,7 +193,19 @@ res_all <- fvs %>%
 res_all <- res_all %>% 
   #change name to Hybrid
   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
-  
+
+
+### Add in percentile groups ------------------------------------------------
+
+# TxBpPrct == for fire priority
+# TxRffcP == for RFFC (aka hybrid) priority
+# TxWPrct == for WUI priority
+res_all <- res_all %>%
+  left_join(hucs_shp %>% 
+              st_drop_geometry() %>% 
+              select(huc12, TxBpPrc, TxRffcP, TxWPrct), 
+            by = join_by("HUC12" == "huc12"))
+
 
 ### Save out ------------------------------------------
 
@@ -193,7 +222,14 @@ res_all <- res_all %>%
 #data cube
 write_csv(res_all, 
           file.path(output_folder, 
-                    paste0('datacube_20230102a.csv')))
+                    paste0('datacube_expanded_20240119.csv')))
+
+
+# write_csv(res_all %>% 
+#             #no CIs
+#             select(-hacbp_ci_low, -hacbp_ci_high, -hacfl_ci_low, -hacfl_ci_high), 
+#           file.path(output_folder, 
+#                     paste0('datacube_202401xx.csv')))
 
 
 
@@ -230,6 +266,16 @@ write_csv(res_all,
 # main_full %>% filter(is.na(run)) %>% 
 #   select(HUC12, RRK, Priority, TxIntensity, TxType, Year) %>% 
 #   write_csv(file.path(output_folder, 'missing_main_20230101.csv')) 
+
+#with full scenario run ID
+# for val, offshoot
+# main_full %>% 
+#   filter(missing_flag) %>%
+#   mutate(mas_scenario = paste(run, RRK, Priority, TxIntensity, TxType, sep="_")) %>% 
+#   select(HUC12, mas_scenario, run, Year, RRK, Priority, TxIntensity, TxType) %>% 
+#   arrange(RRK, HUC12, mas_scenario) %>% 
+#   write_csv(file.path(output_folder, 'missing_main_20230103.csv'))
+
 
 # > ft %>% filter(is.na(fire_type))
 # # A tibble: 17 × 9

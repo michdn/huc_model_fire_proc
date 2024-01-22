@@ -18,12 +18,12 @@ pacman::p_load(
 ### User settings ---------------------------------------------
 
 input_folder <- 'results_csv'
+plots_folder <- 'plots'
 
 ### Base Data import -------------------------------------------
 
 res <- read_csv(file.path(input_folder, 
-                          'testing_qaqc',
-                          'datacube_20230102a.csv')) %>% 
+                          'datacube_expanded_20240119.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 res <- res %>% 
