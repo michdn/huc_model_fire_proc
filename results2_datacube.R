@@ -2,8 +2,8 @@
 
 #Fire modeling outputs: burn probability, flame length, 
 #  % active crown fire, % passive crown fire, % surface fire
-# plus CIs?
-# add percentile groups
+# calculate fire type percentages
+# add/calc fire size areas
 # add FVS data
 
 ### Libraries -------------------------------------------------
@@ -19,7 +19,7 @@ output_folder <- 'results_csv'
 
 ### HUC data ----------------------------------------------------
 
-#to get treatment percentile groups
+#to get area for fire size calculations
 hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 
@@ -93,7 +93,7 @@ main_full <- main_full %>%
 main_full <- main_full %>% 
   select(-missing_flag, -run_update)
   
-main_full %>% filter(is.na(HaCBP)) %>% View()
+main_full %>% filter(is.na(HaCBP)) # %>% View()
 #41, all SN Hybrid 1m trt 6, some HUCs missing all years. e.g. 180201210201
 main_full %>% filter(is.na(HaCBP)) %>% pull(HUC12) %>% unique()
 #15 HUCs affected
@@ -134,40 +134,73 @@ ft %>% filter(is.na(burn_frac_ave))
 nrow(ft) / 3
 #306355, same as main with implicit missing
 
+
+### Flame length import -----------------------------------------------------
+#not used, but collated saved out if later needed
+
+fl_sc <- read_csv(file.path(input_folder,
+                            'cfl_results_from_sql_SC.csv')) %>%
+  mutate(HUC12 = as.character(HUC12))
+fl_nc <- read_csv(file.path(input_folder,
+                            'cfl_results_from_sql_NC.csv')) %>%
+  mutate(HUC12 = as.character(HUC12))
+
+fl_sn_cc1 <- read_csv(file.path(input_folder, 
+                                'cfl_results_from_sql_SN_CC_thru180201220206.csv')) %>%
+  mutate(HUC12 = as.character(HUC12))
+fl_sn_cc2 <- read_csv(file.path(input_folder, 
+                                'cfl_results_from_sql_SN_CC_thru180300100704.csv')) %>%
+  mutate(HUC12 = as.character(HUC12))
+fl_sn_cc3 <- read_csv(file.path(input_folder, 
+                                'cfl_results_from_sql_SN_CC_thru180500040805.csv')) %>%
+  mutate(HUC12 = as.character(HUC12))
+fl_sn_cc4 <- read_csv(file.path(input_folder, 
+                                'cfl_results_from_sql_SN_CC_thru180902060702.csv')) %>%
+  mutate(HUC12 = as.character(HUC12))
+
+#bind
+fl <- bind_rows(fl_sc, fl_nc, 
+                fl_sn_cc1, fl_sn_cc2, fl_sn_cc3, fl_sn_cc4) %>% 
+  #sort nicely
+  arrange(RRK, HUC12, Priority, TxIntensity, TxType, Year)
+
+
+
 ## FVS results --------------------------------------------------------------------
 
 
 #Anna's FVS results
 fvs <- read_csv(file.path(input_folder,
-                          'FVSprocessedOutputsHucs.csv')) %>%
+                          'FVSprocessedOutputsHucs_v2.csv')) %>%
   mutate(HUC12 = as.character(HUC12))
 
 nrow(fvs)
-# [1] 321624 ??
+#fixed in v2 [1] 321624 ??
+#306396
 
-fvs_dupls <- fvs %>% group_by(HUC12, Priority, TxIntensity, TxType, Year) %>% filter(n()>1) %>% summarize(n=n()) %>% ungroup()
- 
-fvs_dupls %>% 
-   left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) #%>% View()
- 
-fvs_dupls %>% 
-   left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) %>% 
-   select(HUC12, RRK) %>% 
-   distinct()
-
-#duplicates will be dropped when I join fire data, will only keep HUCs in the regions as fire modeled
-
-
-### Data processing ------------------------------------------
+# fvs_dupls <- fvs %>% group_by(HUC12, Priority, TxIntensity, TxType, Year) %>% filter(n()>1) %>% summarize(n=n()) %>% ungroup()
+#  
+# fvs_dupls %>% 
+#    left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) #%>% View()
+#  
+# fvs_dupls %>% 
+#    left_join(fvs, by = c("HUC12", "Priority", "TxIntensity", "TxType", "Year")) %>% 
+#    select(HUC12, RRK) %>% 
+#    distinct()
+# 
+# #duplicates will be dropped when I join fire data, will only keep HUCs in the regions as fire modeled
 
 
-#pivot fire type results from longer to 
+### Data processing and joining ------------------------------------------
+
+
+#pivot fire type results from longer to wider
 ft_wide <- ft %>% 
   #1 for surface fire, 2 for passive crown fire, 3 for active
   mutate(type = case_when(
-    fire_type == 1 ~ "surface_fire_perc",
-    fire_type == 2 ~ "passive_crown_fire_perc",
-    fire_type == 3 ~ "active_crown_fire_perc",
+    fire_type == 1 ~ "surface",
+    fire_type == 2 ~ "passive_crown",
+    fire_type == 3 ~ "active_crown",
     TRUE ~ "unknown"
   )) %>% 
   pivot_wider(
@@ -177,9 +210,19 @@ ft_wide <- ft %>%
 
 ft_wide
 
+
+#calculate actual percentages
+ft_wide_perc <- ft_wide %>% 
+  mutate(total_fire = surface + passive_crown + active_crown,
+         surface_perc = surface / total_fire * 100,
+         passive_crown_perc = passive_crown / total_fire * 100,
+         active_crown_perc = active_crown / total_fire * 100) %>% 
+  select(-c(surface, passive_crown, active_crown, total_fire))
+
+
 #join with main results
 res_fire <- main_full %>% 
-  left_join(ft_wide, 
+  left_join(ft_wide_perc, 
             by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
 
 
@@ -187,6 +230,7 @@ res_fire <- main_full %>%
 res_all <- fvs %>% 
   inner_join(res_fire,
              by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
+nrow(res_all) # confirm still 306,396
   
 
 #rename Priority RFFC to Hybrid
@@ -195,16 +239,31 @@ res_all <- res_all %>%
   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
 
 
+#Add in fire area. HaCBP is average of burned fraction of HUC,
+# so area of HUC * burned fraction is fire size
+res_all <- res_all %>% 
+  left_join(hucs_shp %>%
+              st_drop_geometry() %>%
+              select(huc12, hucAc), #acres
+            by = join_by("HUC12" == "huc12")) %>% 
+  mutate(ave_fire_size_ac = HaCBP * hucAc) %>% 
+  select(-hucAc)
+
+res_all
+
 ### Add in percentile groups ------------------------------------------------
 
-# TxBpPrct == for fire priority
-# TxRffcP == for RFFC (aka hybrid) priority
-# TxWPrct == for WUI priority
-res_all <- res_all %>%
-  left_join(hucs_shp %>% 
-              st_drop_geometry() %>% 
-              select(huc12, TxBpPrc, TxRffcP, TxWPrct), 
-            by = join_by("HUC12" == "huc12"))
+# Not adding percentile groups into final dataset
+
+# # TxBpPrct == for fire priority
+# # TxRffcP == for RFFC (aka hybrid) priority
+# # TxWPrct == for WUI priority
+# res_all <- res_all %>%
+#   left_join(hucs_shp %>% 
+#               st_drop_geometry() %>% 
+#               select(huc12, TxBpPrc, TxRffcP, TxWPrct), 
+#             by = join_by("HUC12" == "huc12"))
+
 
 
 ### Save out ------------------------------------------
@@ -214,26 +273,32 @@ res_all <- res_all %>%
 #           file.path(output_folder, 
 #                     paste0('main_results_from_sql_all.csv')))
 # 
-# #fire tire results, collated
-# write_csv(ft, 
-#           file.path(output_folder, 
-#                     paste0('cft_results_from_sql_all.csv')))
+#fire type results, collated
+write_csv(ft,
+          file.path(output_folder,
+                    paste0('cft_results_from_sql_all_20240124.csv')))
+
+#flame length results, collated
+write_csv(fl,
+          file.path(output_folder,
+                    paste0('cfl_results_from_sql_all_20240124.csv')))
+
 
 #data cube
 write_csv(res_all, 
           file.path(output_folder, 
-                    paste0('datacube_expanded_20240119.csv')))
+                    paste0('datacube_expanded_20240124.csv')))
 
 
-# write_csv(res_all %>% 
-#             #no CIs
-#             select(-hacbp_ci_low, -hacbp_ci_high, -hacfl_ci_low, -hacfl_ci_high), 
-#           file.path(output_folder, 
-#                     paste0('datacube_202401xx.csv')))
+write_csv(res_all %>%
+            #no CIs
+            select(-hacbp_ci_low, -hacbp_ci_high, -hacfl_ci_low, -hacfl_ci_high),
+          file.path(output_folder,
+                    paste0('datacube_20240124.csv')))
 
 
 
-### PArking lot -----------------------------------------
+### Parking lot -----------------------------------------
 
 # > main %>% pull(HUC12) %>% unique() %>% length()
 # [1] 2837 
