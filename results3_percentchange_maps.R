@@ -2,6 +2,18 @@
 #  and active crown fire between Year 0 and Years 5, 10, 20, respectively. 
 #  Panels will by priority and intensity, separately. 
 
+# UPDATE: Probably not a good idea to average across groups like this, 
+#  diluting signal. 
+
+# Potential issue with the cuts as well. 
+
+# Potential issue withfuture weather increasing fire (generally, loosely) 
+#  and treatments aimed at reducing fire, then perhaps across years is 
+#  just inherently too noisy with opposing signals. 
+
+
+
+
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -597,6 +609,13 @@ ggplot() +
   theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1)
 
+ggplot() + 
+  geom_point(data=res020v2, 
+             aes(x=HaCBP.x, y=HaCBP.y, color=RRK),
+             shape=1) +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1)
+
 
 res05v2 <- res2024 %>% 
   left_join(res2029, 
@@ -620,51 +639,3 @@ ggplot() +
   geom_abline(intercept=0, slope=1)
 
 
-# #example intensity oddness
-# #Baseline Year 0
-# res2024v3 <- res_orig %>% 
-#   filter(Year == 2024)
-# #Year 20
-# res2044v3 <- res %>% 
-#   filter(Year == 2044)
-# 
-# res020v3 <- res2024v3 %>% 
-#   left_join(res2044v3, 
-#             by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType")) %>% 
-#   #Note: .x is 2024, .y is 2044
-#   mutate(hacbp_diff = HaCBP.y - HaCBP.x, #later year - 2024 value
-#          #percent CHANGE
-#          hacbp_pchange = hacbp_diff / HaCBP.x,
-#          #active crown fire
-#          act_crown_diff = active_crown_fire_perc.y - active_crown_fire_perc.x,
-#          act_crown_pchange = act_crown_diff / active_crown_fire_perc.x,
-#          ac_pchange = ifelse(is.nan(act_crown_pchange) & act_crown_diff == 0, 
-#                              0, 
-#                              act_crown_pchange)) %>% 
-#   select(HUC12, RRK, Priority, TxIntensity, TxType, 
-#          hacbp_pchange, ac_pchange)
-# 
-# res020v3 %>% 
-#   group_by(RRK, TxIntensity) %>% 
-#   summarize(ave_cbp_pc = median(hacbp_pchange, na.rm = TRUE),
-#             .groups = "drop") %>% 
-#   group_by(RRK) %>% 
-#   slice_min(order_by = ave_cbp_pc, n = 3) #only 3
-# 
-# # # A tibble: 12 × 3
-# # # Groups:   RRK [4]
-# # RRK   TxIntensity ave_cbp_pc
-# # <chr> <chr>            <dbl>
-# # 1 CC    500k            0.105 
-# # 2 CC    1m              0.116 
-# # 3 CC    2m              0.131 
-# # 4 NC    500k           -0.0294
-# # 5 NC    1m              0.0159
-# # 6 NC    2m              0.0774
-# # 7 SC    500k            0.0515
-# # 8 SC    1m              0.0624
-# # 9 SC    2m              0.0836
-# # 10 SN    500k            0.104 
-# # 11 SN    1m              0.156 
-# # 12 SN    2m              0.222 
-# 
