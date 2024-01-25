@@ -133,7 +133,7 @@ cfl_collector <- list()
 
 
 #LOOP per output file to scrape all data together
-for (i in seq_along(sql_files)){ #seq_along(sql_files) #33847:51840
+for (i in seq_along(sql_files)){ 
   
   this_sql_file <- sql_files[i]
   
