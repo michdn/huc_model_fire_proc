@@ -12,7 +12,7 @@ input_folder <- 'results_csv'
 ### Base Data import -------------------------------------------
 
 res <- read_csv(file.path(input_folder, 
-                          'datacube_expanded_20240124.csv')) %>% 
+                          'datacube_weighted_20240205.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 #Year 5
@@ -31,35 +31,35 @@ res2044 <- res %>%
 res2044_500k <- res2044 %>% 
   filter(TxIntensity == "500k") %>% 
   rename(hacbp_500k = HaCBP, 
-         hacfl_500k = HaCFL,
-         acf_500k = active_crown_perc,
-         fire_size_500k = ave_fire_size_ac)
+         hacfl_500k = HaCFL) #,
+         #acf_500k = active_crown_perc,
+         #fire_size_500k = ave_fire_size_ac)
 
 res2044_1m <- res2044 %>% 
   filter(TxIntensity == "1m") %>% 
   rename(hacbp_1m = HaCBP,
-         hacfl_1m = HaCFL,
-         acf_1m = active_crown_perc,
-         fire_size_1m = ave_fire_size_ac)
+         hacfl_1m = HaCFL) #,
+         #acf_1m = active_crown_perc,
+         #fire_size_1m = ave_fire_size_ac)
 
 res2044_2m <- res2044 %>% 
   filter(TxIntensity == "2m") %>% 
   rename(hacbp_2m = HaCBP,
-         hacfl_2m = HaCFL,
-         acf_2m = active_crown_perc,
-         fire_size_2m = ave_fire_size_ac)
+         hacfl_2m = HaCFL) #,
+         #acf_2m = active_crown_perc,
+         #fire_size_2m = ave_fire_size_ac)
 
 res2044_jt <- res2044_500k %>% 
-  left_join(res2044_1m, by = join_by(HUC12, RRK, Priority, TxType)) %>% 
-  left_join(res2044_2m, by = join_by(HUC12, RRK, Priority, TxType)) 
+  left_join(res2044_1m, by = join_by(HUC12, Region, Priority, TxType)) %>% 
+  left_join(res2044_2m, by = join_by(HUC12, Region, Priority, TxType)) 
 
 
 res2044_trim <- res2044_jt %>% 
-  select(HUC12, RRK, Priority, TxType, 
+  select(HUC12, Region, Priority, TxType, 
          hacbp_500k, hacbp_1m, hacbp_2m,
-         hacfl_500k, hacfl_1m, hacfl_2m,
-         acf_500k, acf_1m, acf_2m,
-         fire_size_500k, fire_size_1m, fire_size_2m)
+         hacfl_500k, hacfl_1m, hacfl_2m) #,
+         #acf_500k, acf_1m, acf_2m,
+         #fire_size_500k, fire_size_1m, fire_size_2m)
 
 res2044_trim
 
