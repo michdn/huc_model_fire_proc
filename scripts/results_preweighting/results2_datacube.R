@@ -20,6 +20,7 @@ output_folder <- 'results_csv'
 ### HUC data ----------------------------------------------------
 
 #to get area for fire size calculations
+# and priority groups
 hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 
@@ -79,7 +80,7 @@ main_full <- main_expand %>%
 
 # Make crosswalk that contains run, so can add run back in here
 run_xwalk <- main %>% 
-  select(HUC12, RRK, Priority, TxIntensity, run) %>% 
+  dplyr::select(HUC12, RRK, Priority, TxIntensity, run) %>% 
   distinct() %>% 
   rename(run_update = run)
 
@@ -91,7 +92,7 @@ main_full <- main_full %>%
 
 #remove missing_flag, select(-run_update)
 main_full <- main_full %>% 
-  select(-missing_flag, -run_update)
+  dplyr::select(-missing_flag, -run_update)
   
 main_full %>% filter(is.na(HaCBP)) # %>% View()
 #41, all SN Hybrid 1m trt 6, some HUCs missing all years. e.g. 180201210201
@@ -213,11 +214,11 @@ ft_wide
 
 #calculate actual percentages
 ft_wide_perc <- ft_wide %>% 
-  mutate(total_fire = surface + passive_crown + active_crown,
-         surface_perc = surface / total_fire * 100,
-         passive_crown_perc = passive_crown / total_fire * 100,
-         active_crown_perc = active_crown / total_fire * 100) %>% 
-  select(-c(surface, passive_crown, active_crown, total_fire))
+  mutate(total_fire_type = surface + passive_crown + active_crown,
+         surfacePc = surface / total_fire_type * 100,
+         pCrownPc = passive_crown / total_fire_type * 100,
+         aCrownPc = active_crown / total_fire_type * 100) #%>% 
+  #select(-c(surface, passive_crown, active_crown, total_fire))
 
 
 #join with main results
@@ -239,31 +240,43 @@ res_all <- res_all %>%
   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
 
 
+# not including this extra conditional metric
 #Add in fire area. HaCBP is average of burned fraction of HUC,
 # so area of HUC * burned fraction is fire size
-res_all <- res_all %>% 
-  left_join(hucs_shp %>%
-              st_drop_geometry() %>%
-              select(huc12, hucAc), #acres
-            by = join_by("HUC12" == "huc12")) %>% 
-  mutate(ave_fire_size_ac = HaCBP * hucAc) %>% 
-  select(-hucAc)
+# res_all <- res_all %>% 
+#   left_join(hucs_shp %>%
+#               st_drop_geometry() %>%
+#               dplyr::select(huc12, hucAc), #acres
+#             by = join_by("HUC12" == "huc12")) %>% 
+#   mutate(fireSize = HaCBP * hucAc)
 
 res_all
 
-### Add in percentile groups ------------------------------------------------
+### Add in area and percentile groups ------------------------------------------------
 
-# Not adding percentile groups into final dataset
+# TxBpPrct == for fire priority
+# TxRffcP == for RFFC (aka hybrid) priority
+#  RENAME to TxHybPr
+# TxWPrct == for WUI priority
+res_all <- res_all %>%
+  left_join(hucs_shp %>%
+              st_drop_geometry() %>%
+              select(huc12,  hucAc,
+                     TxBpPrc, TxRffcP, TxWPrct) %>% 
+              rename(fireGroup = TxBpPrc,
+                     hybridGroup = TxRffcP,
+                     wuiGroup = TxWPrct),
+            by = join_by("HUC12" == "huc12"))
 
-# # TxBpPrct == for fire priority
-# # TxRffcP == for RFFC (aka hybrid) priority
-# # TxWPrct == for WUI priority
-# res_all <- res_all %>%
-#   left_join(hucs_shp %>% 
-#               st_drop_geometry() %>% 
-#               select(huc12, TxBpPrc, TxRffcP, TxWPrct), 
-#             by = join_by("HUC12" == "huc12"))
 
+#reorder nicely
+res_all <- res_all %>% 
+  select(HUC12, RRK, 
+         Priority, TxIntensity, TxType,
+         run, Year,
+         hucAc,
+         fireGroup, hybridGroup, wuiGroup,
+         everything())
 
 
 ### Save out ------------------------------------------
@@ -273,28 +286,31 @@ res_all
 #           file.path(output_folder, 
 #                     paste0('main_results_from_sql_all.csv')))
 # 
-#fire type results, collated
-write_csv(ft,
-          file.path(output_folder,
-                    paste0('cft_results_from_sql_all_20240124.csv')))
-
-#flame length results, collated
-write_csv(fl,
-          file.path(output_folder,
-                    paste0('cfl_results_from_sql_all_20240124.csv')))
+# #fire type results, collated
+# write_csv(ft,
+#           file.path(output_folder,
+#                     paste0('cft_results_from_sql_all_20240124.csv')))
+# 
+# #flame length results, collated
+# write_csv(fl,
+#           file.path(output_folder,
+#                     paste0('cfl_results_from_sql_all_20240124.csv')))
 
 
 #data cube
-write_csv(res_all, 
+write_csv(res_all %>% 
+            #no CIs but has CFT intermediate values
+            dplyr::select(-hacbp_ci_low, -hacbp_ci_high, -hacfl_ci_low, -hacfl_ci_high), 
           file.path(output_folder, 
-                    paste0('datacube_expanded_20240124.csv')))
+                    paste0('datacube_preweight_20240205.csv')))
 
 
-write_csv(res_all %>%
-            #no CIs
-            select(-hacbp_ci_low, -hacbp_ci_high, -hacfl_ci_low, -hacfl_ci_high),
-          file.path(output_folder,
-                    paste0('datacube_20240124.csv')))
+#actual datacube created after weighting
+# write_csv(res_all %>%
+#             #no CIs
+#             select(-hacbp_ci_low, -hacbp_ci_high, -hacfl_ci_low, -hacfl_ci_high),
+#           file.path(output_folder,
+#                     paste0('datacube_2024012.csv')))
 
 
 

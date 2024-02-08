@@ -8,6 +8,14 @@
 
 
 
+# does not make sense to compare numerically until 
+# weighted by fire frequency 
+
+
+
+
+
+
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(

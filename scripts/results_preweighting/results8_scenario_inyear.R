@@ -404,6 +404,23 @@ ggsave(plot = plot_yr20_hacfl_overall,
        width = 4.5, height = 4, units = "in")
 
 
+# plot_yr20_hacfl_overall_v2 <- ggplot() + 
+#   geom_point(data=res2044_trim, 
+#              aes(x=hacfl_500k, y=hacfl_2m),
+#              shape=1, color="blue", size = 0.1) +
+#   theme(aspect.ratio = 1) + 
+#   geom_abline(intercept=0, slope=1) + 
+#   stat_smooth(data=res2044_trim,
+#               aes(x=hacfl_500k, y=hacfl_2m),
+#               method=lm,
+#               geom="smooth",
+#               fullrange = TRUE) + 
+#   coord_cartesian(xlim = c(0,0.1), ylim = c(0,0.1)) +
+#   labs(title="Year 20: Conditional Flame Length",
+#        x="Baseline (500k Acres Treated)",
+#        y="2.3 Million Acres Treated")
+# plot_yr20_hacfl_overall_v2
+
 #priority & type
 ggplot() + 
   geom_point(data=res2044_trim, 
@@ -429,6 +446,25 @@ plot_yr20_hacfl_prioritytype <- ggplot() +
        y="2.3 Million Acres Treated") + 
   facet_wrap(~Priority+TxType)
 plot_yr20_hacfl_prioritytype
+
+plot_yr20_hacfl_prioritytype_v2 <- ggplot() + 
+  geom_point(data=res2044_trim, 
+             aes(x=hacfl_500k, y=hacfl_2m),
+             shape=1, color = "blue", size=0.1) +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  #stat_smooth(data=res2044_trim,
+  #            aes(x=hacfl_500k, y=hacfl_2m),
+  #            method=lm,
+  #            geom="smooth",
+  #            fullrange = TRUE) + 
+  coord_cartesian(xlim = c(0,0.1), ylim = c(0,0.1)) +
+  labs(title="Year 20: Conditional Flame Length",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") + 
+  facet_wrap(~Priority+TxType)
+plot_yr20_hacfl_prioritytype_v2
+
 
 ggsave(plot = plot_yr20_hacfl_prioritytype,
        filename = "year20_hacfl_500vs2_scatter_prioritytype_formatted.jpg",
@@ -619,3 +655,33 @@ ggsave(plot = plot_yr20_size_region,
        path = "plots",
        width = 6, height = 7, units = "in")
 
+## Count test -----------------------------------------------------------
+
+res2044_lower <- res2044_trim %>% 
+  mutate(hacbp_2m_lower = ifelse(hacbp_2m < hacbp_500k, 1, 0),
+         hacfl_2m_lower = ifelse(hacfl_2m < hacfl_500k, 1, 0),
+         acf_2m_lower = ifelse(acf_2m < acf_500k, 1, 0),
+         size_2m_lower = ifelse(fire_size_2m < fire_size_500k, 1, 0))
+
+res2044_lower %>% 
+  group_by(RRK, Priority, TxType) %>% 
+  summarize(sum_hacbp_lower = sum(hacbp_2m_lower),
+            sum_hacfl_lower = sum(hacfl_2m_lower),
+            sum_acf_lower = sum(acf_2m_lower),
+            sum_size_lower = sum(size_2m_lower),
+            count_all = n()) %>% 
+  mutate(perc_hacbp_lower = sum_hacbp_lower / count_all * 100,
+         perc_hacfl_lower = sum_hacfl_lower / count_all * 100,
+         perc_acf_lower = sum_acf_lower / count_all * 100,
+         perc_size_lower = sum_size_lower / count_all * 100) %>% View()
+
+
+res2044_hacbp <- res2044_trim %>% 
+  mutate(hacbp_2m_lower = ifelse(hacbp_2m < hacbp_500k, 1, 0),
+         hacbp_2m_same = ifelse(hacbp_2m == hacbp_500k, 1, 0),
+         hacbp_2m_higher = ifelse(hacbp_2m > hacbp_500k, 1, 0))
+res2044_hacbp %>% 
+  summarize(sum_lower = sum(hacbp_2m_lower),
+            sum_same = sum(hacbp_2m_same),
+            sum_higher = sum(hacbp_2m_higher),
+            count_all = n())
