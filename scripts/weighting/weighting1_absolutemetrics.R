@@ -70,20 +70,27 @@ head(hucs_abp)
 
 ### baseline HaCBP, calc weights -------------------------------------------
 
-#pick a Year 0 scenario as baseline
-# intensity: 500k (business as usual), priority: Fire (random), trt1 (random)
+#Year 0 scenarios
+# intensity: 500k (business as usual), 
+# Mean of rest of scenarios (priorities and treatment type)
+
+# base <- res %>% 
+#   filter(Year == 2024,
+#          TxIntensity == "500k",
+#          Priority == "Fire",
+#          TxType == "trt1") %>% 
+#   dplyr::select(HUC12, HaCBP)
 
 base <- res %>% 
   filter(Year == 2024,
-         TxIntensity == "500k",
-         Priority == "Fire",
-         TxType == "trt1") %>% 
-  dplyr::select(HUC12, HaCBP)
+         TxIntensity == "500k") %>%
+  group_by(HUC12) %>% 
+  summarize(HaCBP_mean = mean(HaCBP))
 
 
 weighting <- base %>% 
   left_join(hucs_abp, by = join_by("HUC12" == "huc12")) %>% 
-  mutate(sim_burned = HaCBP * 200 * hucAc, #acres
+  mutate(sim_burned = HaCBP_mean * 200 * hucAc, #acres
          sim_yrs = sim_burned / abp_burned)
 
 #histogram of sim yrs
@@ -133,11 +140,11 @@ res_adj_trim <- res_adj %>%
 
 write_csv(res_adj,
           file.path('results_csv',
-                    'datacube_weighted_expanded_20240205.csv'))
+                    'datacube_weighted_expanded_20240212.csv'))
 
 write_csv(res_adj_trim,
           file.path('results_csv',
-                    'datacube_weighted_20240205.csv'))
+                    'datacube_weighted_20240212.csv'))
 
 # write_csv(res_adj %>% slice(1:10),
 #           file.path('results_csv',

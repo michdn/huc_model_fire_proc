@@ -45,7 +45,7 @@ hr <- hucs_shp %>%
   arrange(RRK_Rgn) %>% 
   #manually add code that is used in fuel file names
   #alpha sorted Central Coast, North Coast, Sierra Nevada, South Coast
-  add_column(reg_code = list("CC", "NC", "SN", "SC")) %>% 
+  add_column(reg_code = c("CC", "NC", "SN", "SC")) %>% 
   #join back to get all fields
   left_join(hucs_shp, by = "RRK_Rgn") %>% 
   #create crosswalk from reg_code to huc12s

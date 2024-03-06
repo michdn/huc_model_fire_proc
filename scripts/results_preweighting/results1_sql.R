@@ -2,6 +2,12 @@
 # Calculating some stats
 # Saving for future analyses
 
+# NOTE FOR THE FUTURE - 
+#  In retrospect, it was a LOT faster to pull every fire result out, 
+#   so it would have been better to do that, and then do all the summarizing, etc.
+#  See results1b_sql_everyfire.R
+
+
 ##################################
 # NOTE: How to get data from tahoe
 # 

@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Fire modeling absolute metrics exploration example
 
-The full dataset includes multiple outcome metrics for 27 scenarios (with different grouping factors, such as treatment priority, intensity, type) at four different time points (Year 0, 5, 10, 20). There are a great number of variations and combinations that the data can be summarized and visualized. 
+The full dataset includes multiple outcome metrics for 27 scenarios (with different grouping factors, such as treatment priority, intensity, type) at four different time points (Year 2024, 2029, 2034, 2044). There are a great number of variations and combinations that the data can be summarized and visualized. 
 
 First, we will import the R library packages that we will need. 
 ```{r library}
@@ -21,13 +21,13 @@ pacman::p_load(
   tidyverse)
 ```
 
-In this example, we will pick Year 20 to explore, and will filter the dataset to only Year 2044. The weather in the fire modeling is based on current weather for 2024 and 2029 timesteps, but includes future weather predictions for 2034 and 2044. Whenever you are doing cross-years comparisons, you should remember that there are also weather effects in play. For now we will focus on a single year. 
+In this example, we will pick Year 2044 to explore, and will filter the dataset to only that year. The weather in the fire modeling is based on current weather for 2024 and 2029 timesteps, but includes future weather predictions for 2034 and 2044. Whenever you are doing cross-years comparisons, you should remember that there are also weather effects in play. For now we will focus on a single year. 
 
 ```{r yr20}
 ### Data import -------------------------------------------
 
 res_orig <- read_csv(file.path('..', '..', 'results_csv', 
-                          'datacube_weighted_20240205.csv')) %>% 
+                          'datacube_weighted_20240212.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 #Setting a factor order so that graphs show in this order
@@ -114,7 +114,7 @@ plot_yr20_expBurn_overall <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 20: Expected Burned Acres",
+  labs(title="Year 2044: Expected Burned Acres",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated")
 plot_yr20_expBurn_overall
@@ -133,14 +133,14 @@ plot_yr20_expFlame_overall <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 20: Expected Total Flame Length",
+  labs(title="Year 2044: Expected Total Flame Length",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated")
 plot_yr20_expFlame_overall
 
 ```
 
-We see that in year 20, increasing the intensity does reduce expBurn and expFlame overall (the blue trend line slope is less than the black 1:1 relationship line).
+We see that in 2044, increasing the intensity does reduce expBurn and expFlame overall (the blue trend line slope is less than the black 1:1 relationship line).
 
 There are many factors that we would like to consider, and we can begin to separate out plots to look at different aspects. The above plot includes all regions, all priorities, and all treatment types.
 
@@ -161,7 +161,7 @@ plot_yr20_expBurn_reg <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 20: Expected Burned Acres",
+  labs(title="Year 2044: Expected Burned Acres",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region)
@@ -180,7 +180,7 @@ plot_yr20_expFlame_reg <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 20: Expected Total Flame Length",
+  labs(title="Year 2044: Expected Total Flame Length",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region)
@@ -205,7 +205,7 @@ plot_yr20_expBurn_pt <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 20: Expected Burned Acres",
+  labs(title="Year 2044: Expected Burned Acres",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
@@ -224,7 +224,7 @@ plot_yr20_expFlame_pt <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 20: Expected Total Flame Length",
+  labs(title="Year 2044: Expected Total Flame Length",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
@@ -259,7 +259,7 @@ plot_yr20_sc_expBurn_pt <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="SC: Year 20: Expected Burned Acres",
+  labs(title="SC: Year 2044: Expected Burned Acres",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
@@ -278,7 +278,7 @@ plot_yr20_sc_expFlame_pt <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="SC: Year 20: Expected Total Flame Length",
+  labs(title="SC: Year 2044: Expected Total Flame Length",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
@@ -303,7 +303,7 @@ r44sc <- res2044 %>%
 ggplot() +
   geom_boxplot(data=r44sc,
                mapping=aes(x=scenario_intensity_type, y=expBurn)) +
-    labs(title="SC: Year 20: Expected Burned Acres per HUC",
+    labs(title="SC: Year 2044: Expected Burned Acres per HUC",
        x="Intensity - Treatment Type",
        y="Expected burned acres") +
   theme_bw() +
@@ -313,7 +313,7 @@ ggplot() +
 ggplot() +
   geom_boxplot(data=r44sc,
                mapping=aes(x=scenario_intensity_type, y=expFlame)) +
-    labs(title="SC: Year 20: Expected Total Flame Length per HUC",
+    labs(title="SC: Year 2044: Expected Total Flame Length per HUC",
        x="Intensity - Treatment Type",
        y="Expected total flame length") +
   theme_bw() +
@@ -338,7 +338,7 @@ r44sc_summarized <- r44sc %>%
 ggplot() +
   geom_col(data=r44sc_summarized,
                mapping=aes(x=intensity_type, y=sum_expBurn)) +
-    labs(title="SC: Year 20: Total Expected Burned Acres",
+    labs(title="SC: Year 2044: Total Expected Burned Acres",
        x="Intensity - Treatment Type",
        y="Total expected burned acres") +
   theme_bw() +
@@ -359,7 +359,7 @@ r44sc_sum2 <- r44sc %>%
 ggplot() +
   geom_col(data=r44sc_sum2,
                mapping=aes(x=TxIntensity, y=sum_expBurn)) +
-    labs(title="SC: Year 20: Total Expected Burned Acres",
+    labs(title="SC: Year 2044: Total Expected Burned Acres",
        x="Intensity",
        y="Total expected burned acres") +
   theme_bw() +
@@ -372,4 +372,11 @@ ggplot() +
 ### Future analyses 
 With four regions, three scenario variables with three levels each, and several outcome metrics, there are a multitude of combinations that could be compared and graphed, depending on the question you wish to answer.
 
-Note on between year comparisons: As weather also changes in Year 10 and Year 20, comparing across years will include effects from treatments and weather (which may be opposing effects) and should be kept in consideration when interpreting results. 
+Note on year inclusions: As vegetation had to be modeled in discrete time periods, when doing interpretation, it is important to remember what the year represents. 
+
+* 2024 - Current vegetation state with all year 1-5 treatments applied.
+* 2029 - growth since 2024, and in 2029 all year 6-10 treatments applied.
+* 2034 - growth since 2029, and in 2034 all year 11-15 treatments applied. 
+* 2044 - growth since 2034, in 2039 all year 16-20 treatments applied, and growth to 2044.  
+
+Note on between year comparisons: As weather also changes in 2034 and 2044, comparing across years will include effects from treatments and weather (which may be opposing effects) and should be kept in consideration when interpreting results. 

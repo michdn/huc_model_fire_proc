@@ -38,7 +38,7 @@ tif_files <- list.files(blended_dirs,
                         #no longer need recursive here, since getting exact
                         # folders from above
                         #recursive = TRUE,
-                        #probably only needed "tif$" but extra pattern should hurt
+                        #probably only needed "tif$" but extra pattern shouldn't hurt
                         pattern = "RunID.*tif$")
 
 #testing

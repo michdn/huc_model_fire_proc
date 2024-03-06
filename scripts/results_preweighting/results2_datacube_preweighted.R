@@ -256,7 +256,6 @@ res_all
 
 # TxBpPrct == for fire priority
 # TxRffcP == for RFFC (aka hybrid) priority
-#  RENAME to TxHybPr
 # TxWPrct == for WUI priority
 res_all <- res_all %>%
   left_join(hucs_shp %>%

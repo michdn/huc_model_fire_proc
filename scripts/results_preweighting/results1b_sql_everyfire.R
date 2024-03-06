@@ -1,10 +1,7 @@
 #results 1b
 
 #full fire data extraction
-# so can do joint data bootstrap 
-
-
-## abandoned, not giving client per fire results
+# for troubleshooting or advanced analyses
 
 
 ### Libraries -------------------------------------------------
@@ -12,26 +9,21 @@ if (!require("pacman")) install.packages("pacman")
 if (!require("RSQLite")) install.packages("RSQLite") #needs to be installed, but not library
 pacman::p_load(
   tidyverse,
-  sf,
-  DBI,
-  boot)
+  DBI)
 
 #local function
 #matching Anna's field names
-run_split_rename <- function(df){
+split_rename_run <- function(df){
   df %>% 
-    mutate(huc12 = str_split(huc_id, "_")[[1]][2]) %>% 
-    #left_join(hr, by = "huc12") %>% 
-    #select(-RRK_Rgn) %>% 
-    rename(Year = time_horizon,
-           HUC12 = huc12) %>% 
+    mutate(HUC12 = str_split(huc_id, "_")[[1]][2]) %>% 
+    rename(Year = time_horizon) %>% 
     mutate(run = str_split(mas_scenario, "_")[[1]][1],
-           RRK = str_split(mas_scenario, "_")[[1]][2],
+           Region = str_split(mas_scenario, "_")[[1]][2],
            Priority = str_split(mas_scenario, "_")[[1]][3],
            TxIntensity = str_split(mas_scenario, "_")[[1]][4],
            TxType = str_split(mas_scenario, "_")[[1]][5]) %>% 
-    select(HUC12, RRK, Priority, TxIntensity, TxType, run, Year, everything()) %>% 
-    select(-huc_id, -mas_scenario)
+    select(HUC12, Region, Priority, TxIntensity, TxType, run, Year, everything()) %>% 
+    select(-huc_id)
 }
 
 
@@ -40,7 +32,7 @@ run_split_rename <- function(df){
 # where to find the sql output files
 # NC, SC, 
 # SN_CC_thru180201220206, SN_CC_thru180300100704, SN_CC_thru180500040805, SN_CC_thru180902060702
-reg_group <- "SC" 
+reg_group <- "SN_CC_thru180902060702" 
 results_folder <- file.path("results", reg_group) 
 
 # where to write csv summary files
@@ -90,8 +82,9 @@ for (i in seq_along(sql_files)){
   tbl_hacfl <- dbReadTable(this_db, "ha_cfl_series")
   
   #add metadata to series
-  tbl_hacbp_meta <- dplyr::bind_cols(tbl_meta, tbl_hacbp)
-  tbl_hacfl_meta <- dplyr::bind_cols(tbl_meta, tbl_hacfl)
+  tbl_meta_split <- split_rename_run(tbl_meta)
+  tbl_hacbp_meta <- dplyr::bind_cols(tbl_meta_split, tbl_hacbp)
+  tbl_hacfl_meta <- dplyr::bind_cols(tbl_meta_split, tbl_hacfl)
   
   #add data to collector lists
   cbp_collect[[i]] <- tbl_hacbp_meta
@@ -108,8 +101,19 @@ for (i in seq_along(sql_files)){
 }
 
 #row bind list items together, respectively
-all_main_data <- do.call(bind_rows, main_collector)
-all_cft_data <- do.call(bind_rows, cft_collector)
-all_cfl_data <- do.call(bind_rows, cfl_collector)
+all_cbp_fires <- do.call(bind_rows, cbp_collect)
+all_cfl_fires <- do.call(bind_rows, cfl_collect)
+
+#save out collected data
+write_csv(all_cbp_fires,
+          file.path(output_folder,
+                    paste0('cbp_all_fires_from_sql_', reg_group, '.csv')))
+write_csv(all_cfl_fires,
+          file.path(output_folder,
+                    paste0('cfl_all_fires_from_sql_', reg_group, '.csv')))
+
+#end times
+(time_end <- Sys.time())
+(time_elapsed <- time_end - time_start)
 
   
