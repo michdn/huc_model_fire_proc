@@ -1,3 +1,34 @@
+NEW notes from 2024 March rerun, with good fuel blends, running part on bluejay:
+
+Data acquisition: Fuels no longer have to be copied from Dave's linux VM share to my laptop via Bluejay. Instead, we will run that fuel addition step on Bluejay itself. 
+
+Data Processing:
+In nekodawn/code_local/huc_model_fire/scripts/prep there are several important scripts. 
+
+newprep1_folder_building.R: This creates the folder structure, HUC indicator (with the 1200m buffer extent), and the topographical data (clip/projected/aligned with HUC indicator). 
+The zipped folder ‘hucs_val_foldersetup.zip’ is this before any other data processing (fuels, weather). 
+
+
+
+
+
+
+
+fuels_addition.R: This adds in fuel data, clipped/projected/aligned with HUC indicator. Depending on how many fuel files are being processed at a time this can take several to dozens of hours. Try to keep it to shorter (~5 hours) runs except overnight runs, b/c I feel like R has a memory leak and longer processes take longer than it should. 
+Track runs here: fuels_weather.xlsx
+General flow: 1) From data/data_fuels_holding_{REGION} folders, move some number of fuels to data/data_fuels_in. 2) Run the script that does the processing of these files. 3) After it has finished, move files from data/data_fuels_in to data_fuels_done_{REGION}. 4) Once a region has been fully processed, zip the fuels_done folder to conserve space. 
+This writes to a rudimentary log file log.csv. DO NOT OPEN THIS FILE WHILE PROCESSING. If you must see inside during a run, copy the file and open the copy. There is no error handling and you will error out the processing if you alter the log file. It has the time of completion per fuel layer processed. 
+weather_addition.R: This copies the weather files (jsons from Anna) into the appropriate HUC & year folders. This is fast because it is just a file copy with no spatial processing. 
+
+
+
+
+
+
+
+
+BELOW are notes from the original 2024 January run, with bad fuel blends:
+
 See: https://docs.google.com/document/d/1Ii-no0iXaHaqOs7gHi4Q1WtiJ0zt-rKjwcct1W6qVMw/edit?usp=sharing
 
 Log of data acquisition and processing: fuels_weather.xlsx
