@@ -20,43 +20,9 @@ options(future.globals.onReference = "error")
 
 ### User settings ---------------------------------------------
 
-region_to_run <- "SC" #"CC", "SN", "NC"
+base_folder <- "hucs_gf_test_f2rf"
 
-base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf")
-
-
-### Data finding: fuels ---------------------------------------
-
-#Future dev note: In retrospect, may have been easier to construct
-# what the folders should be named (via RunID lookup table, etc)
-# rather than grepping, but as long as it works, it works. 
-
-shared <- file.path("R:", "rem")
-
-#this will take a few minutes to scan all folders
-all_dirs <- list.dirs(shared) 
-
-#Run per region   
-region_dirs <- grep(pattern=region_to_run, all_dirs, value=TRUE)
-#just FVS_fuels
-fvsfuels_dirs <- grep(pattern="FVS_fuels", region_dirs, value=TRUE)
-#just blended fuels
-blended_dirs <- grep(pattern="blended_outputs", fvsfuels_dirs, value=TRUE)
-
-
-# CHECK TO SEE IF ANY FOLDERS NEED REMOVING
-
-# #need to get rid of '_orig' folders
-# orig_removed <- grep(pattern='_orig', test_folders, invert=TRUE, value=TRUE)
-# #need to get rid of '_wrong' folders
-# wrong_removed <- grep(pattern='_wrong', orig_removed, invert=TRUE, value=TRUE)
-
-
-
-fuel_files <- list.files(blended_dirs,
-                        full.names = TRUE,
-                        #probably only needed "tif$" but extra pattern shouldn't hurt
-                        pattern = "RunID.*tif$")
+input_folder <- file.path("data", "data_fuels_in")
 
 
 ### Data import ------------------------------------------------
@@ -82,7 +48,12 @@ hr <- hucs_shp %>%
 
 
 
-### Create input dataframe & go -----------------------------------------------
+#Read in list of all files in input folder
+# note: no checking occurs, up to the user to have added all by the end of all runs
+fuel_files <- list.files(input_folder, 
+                       full.names = TRUE,
+                       pattern = "*.tif$")
+
 
 #create input dataframe
 # column fuel file
@@ -92,6 +63,7 @@ hr <- hucs_shp %>%
 
 input_df <- tibble(fuel_file = fuel_files) %>% 
   mutate(file_name = tools::file_path_sans_ext(basename(fuel_file))) %>% 
+         #reg_code = str_split(file_name, "_") %>% purrr::map_chr(., 2)) %>% 
   separate_wider_delim(cols = file_name, delim = "_",
                        names = c("runid", "reg_code",
                                  "priority", "intensity", "trt",
@@ -184,3 +156,21 @@ write_csv(fuel_log,
 
 # Timing notes ----------------------------------
 
+# 10 fuel files (5 SC, 5 NC)
+# > system.time(added_fuels <- lapply(1:nrow(input_df), add_fuels_to_huc))
+# user  system elapsed 
+# 2406.16   50.61 4033.72 
+# > (time_elapsed <- time_end - time_start)
+# Time difference of 1.121138 hours
+
+# > system.time(added_fuels <- future_lapply(1:nrow(input_df), add_fuels_to_huc))
+# user  system elapsed 
+# 76.54  134.61  323.25 
+# > (time_elapsed <- time_end - time_start)
+# Time difference of 5.441077 mins
+
+# > system.time(added_fuels <- future_lapply(1:nrow(input_df), add_fuels_to_huc))
+# user  system elapsed 
+# 774.42   23.79 2432.49 
+# > (time_elapsed <- time_end - time_start)
+# Time difference of 40.66287 mins
