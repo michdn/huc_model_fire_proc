@@ -1,7 +1,7 @@
-### Libraries -------------------------------------------------
+# for transferring blended fuels from chickadee to local laptop for qaqc
+# (used to be for production, but now leaving on bluejay with processing on bluejay)
 
-#if (!require("pacman")) install.packages("pacman")
-#pacman::p_load(tidyverse) 
+# Mostly looking at fml. 
 
 ### User settings ---------------------------------------------
 
@@ -12,13 +12,18 @@ shared <- file.path("R:", "rem")
 # New blended FM40 rasters (hopefully correct): /mnt/share/rem/RunID21_SC_Fire_500k_trt6/FVS_fuels/blended_outputs/*fml*tif
 # Original blended FM40 rasters (incorrect): /mnt/share/rem/RunID21_SC_Fire_500k_trt6_orig/FVS_fuels/blended_outputs/*fml*tif
 
+
+# run ids, include _, important for single digit runids
+selected_runs <- 
+  "RunID21_|RunID27_|RunID26_|RunID20_|RunID25_"
+
+
 #My drive & folder over RDC: 
-#\\tsclient\C\Users\nekodawn\code_local\huc_val_gridfire\data\data_fuels_bluejay
 outfolder <- file.path(
   #backslashes escaped
   "\\\\tsclient", 
   "C", "Users", "nekodawn", "code_local", 
-  "huc_model_fire", "qaqc_fvs", "data_fuels_test_RunID21_SC_Fire_500k_trt6_v2")
+  "huc_model_fire", "qaqc_fvs", "sc_qaqc") #sc_qaqc, cc_qaqc, nc_qaqc, sn_qaqc
 
 
 ### select files -----------------------------------------------------
@@ -37,8 +42,8 @@ fvsfuels_dirs <- grep(pattern="FVS_fuels", region_dirs, value=TRUE)
 blended_dirs <- grep(pattern="blended_outputs", fvsfuels_dirs, value=TRUE)
 
 
-#test example (to be removed later for real runs)
-test_folders <- grep(pattern='RunID21_SC_Fire_500k_trt6', blended_dirs, value=TRUE)
+#test scenarios
+test_folders <- grep(pattern=selected_runs, blended_dirs, value=TRUE)
 #need to get rid of '_orig' folders
 orig_removed <- grep(pattern='_orig', test_folders, invert=TRUE, value=TRUE)
 #need to get rid of '_wrong' folders
@@ -52,7 +57,7 @@ tif_files <- list.files(wrong_removed,
                         # folders from above
                         #recursive = TRUE,
                         #probably only needed "tif$" but extra pattern shouldn't hurt
-                        pattern = "RunID.*tif$")
+                        pattern = "RunID.+_fml_.+tif$") #"RunID.+_fml_.+tif$"
 
 
 
@@ -63,4 +68,4 @@ file.copy(from=tif_files, to=outfolder)
 
 (time_end <- Sys.time())
 (time_end - time_start) 
-#55 minutes for 540 SC files (27 scenarios)
+

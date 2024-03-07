@@ -1,11 +1,10 @@
 # Script for adding in fuel data into existing structure
-#  Designed to add whatever fuels are in the fuels_in folder
-#   so not necessarily all at the same time. 
+#  Designed to add fuels for a region (grep patterns below)
 
-# As such, there is NO CHECKING. 
+# As such, there is no checking on runids or total fuels processed. 
 # User must keep track of what fuels have been processed.
 
-# This is prep2 REWRITTEN to be parallelized. 
+# This is old prep2 REWRITTEN to be parallelized and run on bluejay. 
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
