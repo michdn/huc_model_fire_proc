@@ -31,10 +31,14 @@ split_rename_run <- function(df){
 # where to find the sql output files
 # NC, SC, SN, CC
 reg_group <- 'SC' 
-results_folder <- file.path('results', 'sql', reg_group) 
+results_folder <- file.path('run_202401_badblend', 'results', reg_group) 
+# file.path('results', 'raw_sqlite', reg_group) 
+# file.path('R:') # ON BLUEJAY???
 
 # where to write csv summary files
-output_folder <- file.path('results', 'raw_extraction') 
+output_folder <- file.path('run_202401_badblend', 'results_raw_extraction_test') 
+#  #file.path('results', 'csv_extraction')
+
 dir.create(output_folder, recursive = TRUE) 
 
 # ***

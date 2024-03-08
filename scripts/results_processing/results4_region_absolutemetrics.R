@@ -1,5 +1,5 @@
-# Script for calculating expected yearly burned acres per HUC 
-#  from an Annual Burn Probability map
+# Script for weighting conditional gridfire results to absolute metrics 
+#  using an Annual Burn Probability map
 
 
 ### Libraries -------------------------------------------------
@@ -10,21 +10,25 @@ pacman::p_load(
   exactextractr,
   sf) 
 
+### User settings ---------------------------------------------
+
+reg_code <- "SC"
+
+input_folder <- file.path('results', 'conditional')
+
+output_folder <- file.path('results', 'absolute')
+
 
 ### Data ----------------------------------------------------
 
-res <- read_csv(file.path('results_csv', 
-                          'datacube_preweight_20240205.csv')) %>% 
+res <- read_csv(file.path(input_folder, 
+                          paste0(reg_code, '_conditional_TEST20240307.csv'))) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 
 hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 #Update cell size when changing abp rasters
-  #test abp
-  #abp <- raster("other_datasets/fireDynamics/fireDynamics/AnnualBurnProbability2022.tif")
-  ## abp is 30m x 30m = 900 sq m = 0.2223948 acres
-
 abp <- raster("other_datasets/ucsb_calfire/ucsb_burn_severity.tif")
 # abp is 1000m x 1000m = 247.105381 ac
 cell_acres = 247.105381
@@ -49,6 +53,7 @@ hucs <- st_transform(hucs_shp, st_crs(abp))
 
 #extract the sum of the abp per huc
 # (with partial pixel coverage support using exact_extract)
+# it's fast, not going to worry about filtering on region
 sum_abp <- exact_extract(abp, 
                          hucs,
                          fun = 'sum', 
@@ -73,13 +78,6 @@ head(hucs_abp)
 #Year 0 scenarios
 # intensity: 500k (business as usual), 
 # Mean of rest of scenarios (priorities and treatment type)
-
-# base <- res %>% 
-#   filter(Year == 2024,
-#          TxIntensity == "500k",
-#          Priority == "Fire",
-#          TxType == "trt1") %>% 
-#   dplyr::select(HUC12, HaCBP)
 
 base <- res %>% 
   filter(Year == 2024,
@@ -126,27 +124,19 @@ res_adj <- res %>%
 
 ## Final adjustments ----------------------------------------------
 
-#last minute request to rename RRK to Region
-
-res_adj <- res_adj %>% 
-  rename(Region = RRK)
-  
-
 res_adj_trim <- res_adj %>% 
-  dplyr::select(-surface, -passive_crown, -active_crown, -total_fire_type,
+  dplyr::select(-mas_scenario, 
+                -surface, -passive_crown, -active_crown,
                 -abp_sum, -cell_acres,
                 -exp_all_firetype)
 
+stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(res_adj,
-          file.path('results_csv',
-                    'datacube_weighted_expanded_20240212.csv'))
+          file.path(output_folder,
+                    paste0(reg_code, '_absolute_expanded_', stamp, '.csv')))
 
 write_csv(res_adj_trim,
-          file.path('results_csv',
-                    'datacube_weighted_20240212.csv'))
+          file.path(output_folder,
+                    paste0(reg_code, '_absolute_', stamp, '.csv')))
 
-# write_csv(res_adj %>% slice(1:10),
-#           file.path('results_csv',
-#                     'weighted_expanded_test10.csv'))
-# 
