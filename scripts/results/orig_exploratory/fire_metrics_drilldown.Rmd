@@ -148,38 +148,38 @@ For example, this is the same expBurn and expFlame plots as above, but faceted (
 
 ```{r region}
 #region
-plot_yr20_expBurn_reg <- ggplot() + 
-  geom_point(data=res2044_trim, 
+plot_yr20_expBurn_reg <- ggplot() +
+  geom_point(data=res2044_trim,
              aes(x=expBurn_500k, y=expBurn_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
-  geom_abline(intercept=0, slope=1) + 
+  theme(aspect.ratio = 1) +
+  geom_abline(intercept=0, slope=1) +
   stat_smooth(data=res2044_trim,
               aes(x=expBurn_500k, y=expBurn_2m),
               method=lm,
               geom="smooth",
               formula = 'y ~ x',
-              se = FALSE, 
-              fullrange = TRUE) + 
+              se = FALSE,
+              fullrange = TRUE) +
   labs(title="Year 2044: Expected Burned Acres",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region)
 plot_yr20_expBurn_reg
 
-plot_yr20_expFlame_reg <- ggplot() + 
-  geom_point(data=res2044_trim, 
+plot_yr20_expFlame_reg <- ggplot() +
+  geom_point(data=res2044_trim,
              aes(x=expFlame_500k, y=expFlame_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
-  geom_abline(intercept=0, slope=1) + 
+  theme(aspect.ratio = 1) +
+  geom_abline(intercept=0, slope=1) +
   stat_smooth(data=res2044_trim,
               aes(x=expFlame_500k, y=expFlame_2m),
               method=lm,
               geom="smooth",
               formula = 'y ~ x',
-              se = FALSE, 
-              fullrange = TRUE) + 
+              se = FALSE,
+              fullrange = TRUE) +
   labs(title="Year 2044: Expected Total Flame Length",
        x="Baseline (500k Acres Treated)",
        y="2.3 Million Acres Treated") +
@@ -189,7 +189,7 @@ plot_yr20_expFlame_reg
 
 ```
 
-Or we could look at priority and treatment type. 
+For example, this is the same expBurn and expFlame plots as above, but faceted (grouped and separated) by priority and treatment type. 
 
 ```{r prioritytype}
 plot_yr20_expBurn_pt <- ggplot() + 
