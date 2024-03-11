@@ -20,7 +20,7 @@ options(future.globals.onReference = "error")
 
 ### User settings ---------------------------------------------
 
-base_folder <- "hucs_gf_test_f4rf"
+base_folder <- "hucs_gf_noweather"
 
 regions <- c("SC", "NC", "CC", "SN")
 
