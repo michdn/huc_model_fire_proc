@@ -2,9 +2,7 @@
 
 #copy files is fast, can stay as loop. 
 
-
-# add region
-# either by folder name or by huc lookup table
+# NOTE! Can be done before or later fuels addition
 
 
 ### Libraries -------------------------------------------------
@@ -15,7 +13,9 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-base_folder <- "hucs_gf_test_f4rf"
+#base_folder <- "hucs_gf_test_f4rf"
+base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf")
+
 input_folder <- file.path("data", "data_weather")
 
 (time_start <- Sys.time())
@@ -55,7 +55,7 @@ for (i in seq_along(weather_files)){
   this_file_name <- tools::file_path_sans_ext(basename(this_file))
   #sep name at dash, huc and year
   this_huc <- str_split(this_file_name, "_")[[1]][1] %>% 
-    #removing extra space next to underscore
+    #removing extra spaces (leading and trailing)
     str_trim() 
   this_yr <- str_split(this_file_name, "_")[[1]][2] 
   
