@@ -1,5 +1,5 @@
-# script to explore Year 2024 treatment group effects
-#  2024 includes treatments yr1-5 (treatment group = 25)
+# script to look at treatment groups by time SLICE
+
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -8,27 +8,53 @@ pacman::p_load(
 
 ### Base Data import -------------------------------------------
 
-res_orig <- read_csv(file.path('results_csv', 
-                               'datacube_weighted_20240212.csv')) %>% 
-  mutate(HUC12 = as.character(HUC12))
+# res_orig <- read_csv(file.path('results_csv', 
+#                                'datacube_weighted_20240212.csv')) %>% 
+#   mutate(HUC12 = as.character(HUC12))
 
+res_orig <- read_csv(file.path('run_202401_badblend',
+                               'results_raw_extraction_test',
+                               'SC_absolute_TEST20240307.csv')) %>% 
+  mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------
 
 
-# Want priority order: 'Fire', 'WUI', 'Hybrid'
-# Want intensity order: '500k', '1m', '2m'
 
 res <- res_orig %>% 
   #For graphing in the correct order
   # make factor with set order (priority)
+  # Want priority order: 'Fire', 'WUI', 'Hybrid'
+  # Want intensity order: '500k', '1m', '2m'
   mutate(Priority = as.factor(Priority),
          Priority = forcats::fct_relevel(Priority,
                                          "Fire", "WUI", "Hybrid"),
          #Make factor with set order (intensity))
          TxIntensity = as.factor(TxIntensity),
          TxIntensity = forcats::fct_relevel(TxIntensity,
-                                            "500k", "1m", "2m"))
+                                            "500k", "1m", "2m")) %>% 
+  #make clear labels
+  mutate(fireGrpLbl = case_when(
+    fireGroup == 25 ~ "2024 (25)",
+    fireGroup == 50 ~ "2029 (50)",
+    fireGroup == 75 ~ "2034 (75)",
+    fireGroup == 100 ~ "2039 (100)",
+    .default = as.character(fireGroup)
+  )) %>% 
+  mutate(wuiGrpLbl = case_when(
+    wuiGroup == 25 ~ "2024_2039 (25)",
+    wuiGroup == 50 ~ "2029 (50)",
+    wuiGroup == 75 ~ "2034 (75)",
+    wuiGroup == 100 ~ "not treated",
+    .default = as.character(wuiGroup)
+  )) %>% 
+  mutate(hybridGrpLbl = case_when(
+    hybridGroup == 25 ~ "2024 (25)",
+    hybridGroup == 50 ~ "2029 (50)",
+    hybridGroup == 75 ~ "2034 (75)",
+    hybridGroup == 100 ~ "2039 (100)",
+    .default = as.character(hybridGroup)
+  ))
 
 
 ### Looping version -----------------------------------------------
@@ -47,7 +73,7 @@ for (r in seq_along(regions)){
   #output 
   plot_folder <- file.path('plots', 'timeslices', this_reg)
 
-  dir.create(sampled_folder, recursive = TRUE)
+  dir.create(plot_folder, recursive = TRUE)
   
   
   #priorities in this region (all same)
@@ -105,12 +131,12 @@ for (r in seq_along(regions)){
         labs(title = plot_label,
              x = "Treatment Intensity")
       
-      burn_file <- paste0(this_reg, '_', this_priority, '_', this_yr, '_',
+      burn_file <- paste0(this_reg, '_', this_priority, '_', this_year, '_',
                     'boxplot_expBurn.jpg')
       
       ggsave(plot = burn_plot,
              filename = file.path(plot_folder, burn_file),
-             width = 8, height = 6, units = 'in')
+             width = 5, height = 7, units = 'in')
       
       
       #expFlame
@@ -125,12 +151,12 @@ for (r in seq_along(regions)){
         labs(title = plot_label,
              x = "Treatment Intensity")
       
-      flame_file <- paste0(this_reg, '_', this_priority, '_', this_yr, '_',
+      flame_file <- paste0(this_reg, '_', this_priority, '_', this_year, '_',
                           'boxplot_expFlame.jpg')
       
       ggsave(plot = flame_plot,
              filename = file.path(plot_folder, flame_file),
-             width = 8, height = 6, units = 'in')
+             width = 5, height = 7, units = 'in')
       
       #HaCBP
       hacbp_plot <- ggplot() +
@@ -144,14 +170,12 @@ for (r in seq_along(regions)){
         labs(title = plot_label,
              x = "Treatment Intensity")
       
-      hacbp_file <- paste0(this_reg, '_', this_priority, '_', this_yr, '_',
+      hacbp_file <- paste0(this_reg, '_', this_priority, '_', this_year, '_',
                           'boxplot_hacbp.jpg')
       
       ggsave(plot = hacbp_plot,
              filename = file.path(plot_folder, hacbp_file),
-             width = 8, height = 6, units = 'in')
-      
-      
+             width = 5, height = 7, units = 'in')
       
       
     } #end y yrs
