@@ -19,43 +19,59 @@ options(future.globals.onReference = "error")
 
 ### User settings ---------------------------------------------
 
-region_to_run <- "SC" #"CC", "SN", "NC"
+region_to_run <- "CC" #"CC", "SN", "NC"
 
 base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf")
 
+shared <- file.path("R:", "rem")
+
+fvs_names <- read_csv(file.path("data", "FvsNames.csv"))
 
 ### Data finding: fuels ---------------------------------------
 
-#Future dev note: In retrospect, may have been easier to construct
-# what the folders should be named (via RunID lookup table, etc)
-# rather than grepping, but as long as it works, it works. 
+#create folders that look like R:/rem/RunID36_CC_Fire_2m_trt4/FVS_fuels/blended_outputs/
 
-shared <- file.path("R:", "rem")
-
-#this will take a few minutes to scan all folders
-all_dirs <- list.dirs(shared) 
-
-#Run per region   
-region_dirs <- grep(pattern=region_to_run, all_dirs, value=TRUE)
-#just FVS_fuels
-fvsfuels_dirs <- grep(pattern="FVS_fuels", region_dirs, value=TRUE)
-#just blended fuels
-blended_dirs <- grep(pattern="blended_outputs", fvsfuels_dirs, value=TRUE)
+fvs_names <- fvs_names %>% 
+  mutate(runid_folders = file.path('R:',
+                                   'rem',
+                                   name,
+                                   'FVS_fuels',
+                                   'blended_outputs'))
 
 
-# CHECK TO SEE IF ANY FOLDERS NEED REMOVING
-
-# #need to get rid of '_orig' folders
-# orig_removed <- grep(pattern='_orig', test_folders, invert=TRUE, value=TRUE)
-# #need to get rid of '_wrong' folders
-# wrong_removed <- grep(pattern='_wrong', orig_removed, invert=TRUE, value=TRUE)
+selected <- grep(pattern=region_to_run, 
+                 fvs_names %>% pull(runid_folders),
+                 value=TRUE)
+#should be 27 for a region
 
 
+# #this will take a few minutes to scan all folders - TOO MANY FOLDERS TO USE NOW
+# all_dirs <- list.dirs(shared) 
+# #Run per region   
+# region_dirs <- grep(pattern=region_to_run, all_dirs, value=TRUE)
+# #just FVS_fuels and blended
+# fuels_dirs <- grep(pattern="/FVS_fuels/blended_outputs$", region_dirs, value=TRUE)
+# # CHECK TO SEE IF ANY FOLDERS NEED REMOVING
+# fuels_dirs
+# #need to get rid of various folders (may not need, no harm to include)
+# do_not_find <- '_orig|_wrong|_re-run|MAS_delete|MAS_orig|_moved'
+# dnf_removed <- grep(pattern=do_not_find, fuels_dirs, invert=TRUE, value=TRUE)
+# # CONFIRM GOOD FOLDERS. 27 for a region
+# dnf_removed
 
-fuel_files <- list.files(blended_dirs,
+fuel_files <- list.files(selected,
                         full.names = TRUE,
                         #probably only needed "tif$" but extra pattern shouldn't hurt
                         pattern = "RunID.*tif$")
+
+fuel_files
+
+# Need to REMOVE 2044
+fuel_files <- grep(fuel_files, pattern="_2044_", invert=TRUE, value=TRUE)
+
+
+#should be 540 for a region
+fuel_files
 
 
 ### Data import ------------------------------------------------
@@ -182,4 +198,14 @@ write_csv(fuel_log,
           append = TRUE)
 
 # Timing notes ----------------------------------
-
+# On Bluejay
+#SC
+# > plan(multisession, workers = availableCores(omit=1))
+#   > system.time(added_fuels <- future_lapply(1:nrow(input_df), add_fuels_to_huc))
+# user   system  elapsed 
+# 23.78     6.92 22258.89 
+#   > (time_end <- Sys.time())
+# [1] "2024-03-11 18:00:49 PDT"
+# > (time_elapsed <- time_end - time_start)
+# Time difference of 6.224809 hours
+# Original loop version on laptop ran (segmented) for ~17 hours
