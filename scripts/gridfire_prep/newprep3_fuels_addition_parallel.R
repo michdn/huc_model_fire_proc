@@ -209,3 +209,13 @@ write_csv(fuel_log,
 # > (time_elapsed <- time_end - time_start)
 # Time difference of 6.224809 hours
 # Original loop version on laptop ran (segmented) for ~17 hours
+
+# CC
+# > plan(multisession, workers = availableCores(omit=1))
+# > system.time(added_fuels <- future_lapply(1:nrow(input_df), add_fuels_to_huc))
+# user   system  elapsed 
+# 22.92     6.94 21314.01 
+# > (time_end <- Sys.time())
+# [1] "2024-03-12 20:35:13 PDT"
+# > (time_elapsed <- time_end - time_start)
+# Time difference of 5.958782 hours

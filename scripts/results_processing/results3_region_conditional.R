@@ -11,7 +11,8 @@ pacman::p_load(
 
 reg_code <- "SC"
 
-input_folder <- file.path('run_202401_badblend', 'results_raw_extraction_test') 
+input_folder <- file.path('results', 'extracts')
+# file.path('run_202401_badblend', 'results_raw_extraction_test') 
  #file.path('results', 'csv_extraction')
 
 output_folder <- file.path('results', 'conditional')

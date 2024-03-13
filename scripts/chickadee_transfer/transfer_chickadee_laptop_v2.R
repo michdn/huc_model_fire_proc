@@ -16,7 +16,8 @@ shared <- file.path("R:", "rem")
 
 # run ids, include _ if runid only, important for single digit runids
 selected_runs <- 
-  'RunID30_.+trt6|RunID32_.+trt6|RunID33_.+trt1|RunID34_.+trt1|RunID35_.+trt4|RunID36_.+trt4' #CC
+  'CC.+trt6'
+  #'RunID30_.+trt6|RunID32_.+trt6|RunID33_.+trt1|RunID34_.+trt1|RunID35_.+trt4|RunID36_.+trt4' #CC
   #'RunID21_.+trt1|RunID25_.+trt1|RunID23_.+trt1' # trt4 # part of SC
   #'RunID25_|RunID20_ #trt1 #part of SC
   #"RunID20_|RunID21_|RunID23_|RunID24_|RunID26_|RunID27_" # part of SC

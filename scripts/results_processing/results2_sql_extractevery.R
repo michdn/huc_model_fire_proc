@@ -2,6 +2,8 @@
 # found to be faster to extract everything from sqlite
 #  and then later process, than trying to do sql queries in main pull
 
+#script '1' no longer needed, as it was the copy off of pyregence script
+# This script can run on bluejay reading from the share
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -31,12 +33,17 @@ split_rename_run <- function(df){
 # where to find the sql output files
 # NC, SC, SN, CC
 reg_group <- 'SC' 
-results_folder <- file.path('run_202401_badblend', 'results', reg_group) 
+results_folder <- file.path('R:', 
+                            'rem',
+                            'MAS_gridfire_outputs',
+                            reg_group)
+#file.path('run_202401_badblend', 'results', reg_group) 
 # file.path('results', 'raw_sqlite', reg_group) 
-# file.path('R:') # ON BLUEJAY???
 
 # where to write csv summary files
-output_folder <- file.path('run_202401_badblend', 'results_raw_extraction_test') 
+output_folder <- file.path('results', 'extracts')
+
+# file.path('run_202401_badblend', 'results_raw_extraction_test') 
 #  #file.path('results', 'csv_extraction')
 
 dir.create(output_folder, recursive = TRUE) 
