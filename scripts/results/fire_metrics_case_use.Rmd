@@ -1,0 +1,450 @@
+---
+title: "Fire behavior metrics case use"
+author: "SIG"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Fire modeling absolute metrics exploration example
+
+The full dataset includes multiple outcome metrics for 27 scenarios (with different grouping factors, such as treatment priority, intensity, type) at four different time points (Year 2024, 2029, 2034, 2039) in four different regions. There are a great number of variations and combinations that the data can be summarized by and visualized. 
+
+```{r library}
+#First, we will import the R library packages that we will need.
+
+### Libraries -------------------------------------------------
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse)
+```
+
+## Single Year: 2039
+
+Initially, we will select a single year, 2039, to explore. A note on weather: The weather in the fire modeling is based on current weather for 2024 and 2029 timesteps, but includes future weather predictions for 2034 and 2039. Whenever you are doing cross-years comparisons, you should remember that there are also weather effects in play.
+
+```{r yr2039}
+### Data import -------------------------------------------
+
+res_orig <- read_csv(file.path('..', '..', 'results_csv', 
+                          'datacube_weighted_20240212.csv')) %>% 
+  mutate(HUC12 = as.character(HUC12))
+
+#Setting a factor order so that graphs show in this order
+# Want priority order: 'Fire', 'WUI', 'Hybrid'
+# Want intensity order: '500k', '1m', '2m'
+
+res <- res_orig %>% 
+  #For graphing in the correct order
+  # make factor with set order (priority)
+  mutate(Priority = as.factor(Priority),
+         Priority = forcats::fct_relevel(Priority,
+                                         "Fire", "WUI", "Hybrid"),
+         #Make factor with set order (intensity))
+         TxIntensity = as.factor(TxIntensity),
+         TxIntensity = forcats::fct_relevel(TxIntensity,
+                                            "500k", "1m", "2m"))
+
+#Filter to single year
+res2039 <- res %>% 
+  filter(Year == 2039)
+
+```
+
+Suppose we are interested in comparing the difference between the different intensity scenarios (500k, 1m, and 2m). We can filter our dataset three times, once for each intensity group. We rename the outcome metrics to reflect what intensity the scenario was. 
+
+```{r intensity}
+
+res2039_500k <- res2039 %>% 
+  filter(TxIntensity == "500k") %>% 
+  rename(expBurn_500k = expBurn, 
+         expFlame_500k = expFlame,
+         expAcf_500k = expPcActive)
+
+res2039_1m <- res2039 %>% 
+  filter(TxIntensity == "1m") %>% 
+  rename(expBurn_1m = expBurn, 
+         expFlame_1m = expFlame,
+         expAcf_1m = expPcActive)
+
+res2039_2m <- res2039 %>% 
+  filter(TxIntensity == "2m") %>% 
+  rename(expBurn_2m = expBurn, 
+         expFlame_2m = expFlame,
+         expAcf_2m = expPcActive)
+
+```
+
+Then we will join our different intensity tables with each other, careful to match on HUC and all other scenario-defining variables. We want to make sure we are comparing e.g. ```HUC A - Fire Priority - trt1 type - 2.3 m``` to ```HUC A - Fire Priority - trt1 type - 500k``` (i.e. only the intensity is different). 
+
+```{r intensityjoin}
+
+res2039_jt <- res2039_500k %>% 
+  left_join(res2039_1m, by = join_by(HUC12, Region, Priority, TxType)) %>%  
+  left_join(res2039_2m, by = join_by(HUC12, Region, Priority, TxType)) 
+
+
+#selecting only the relevant fields for convenience
+res2039_trim <- res2039_jt %>% 
+  dplyr::select(HUC12, Region, Priority, TxType, 
+         expBurn_500k, expBurn_2m,
+         expFlame_500k, expFlame_2m,
+         expAcf_500k, expAcf_2m)
+
+
+```
+
+Now suppose we are interested in comparing the 500k intensity and 2.3 million intensity. We can plot a joint distribution plot (scatter plot) of the 500k expected burned acres against the 2.3 million intensity expected burned acres. We can also do the same for other metrics, such as the expected total flame length.  
+
+The x-axis is the expBurn value of the 500k intensity (baseline) for each HUC-priority-type combination, and the y-axis would be the expBurn for the matching HUC-priority-type combination for the 2.3 million intensity level. Adding a 1:1 relationship line visually shows where the expBurn values are equal (i.e. the treatment intensity change did not have an effect). Adding a trend line (linear regression) of the observed expBurn values would show if the increase in intensity caused a change in expBurn values - when the slope of the trend line is less than the 1:1 relationship, the increase in intensity caused a decrease in expBurn. 
+
+
+```{r overall}
+#overall expBurn
+plot_yr2039_expBurn_overall <- ggplot() + 
+  geom_point(data=res2039_trim, 
+             aes(x=expBurn_500k, y=expBurn_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  stat_smooth(data=res2039_trim,
+              aes(x=expBurn_500k, y=expBurn_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE, 
+              fullrange = TRUE) + 
+  labs(title="Year 2039: Expected Burned Acres",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated")
+plot_yr2039_expBurn_overall
+
+#overall expFlame
+plot_yr2039_expFlame_overall <- ggplot() + 
+  geom_point(data=res2039_trim, 
+             aes(x=expFlame_500k, y=expFlame_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  stat_smooth(data=res2039_trim,
+              aes(x=expFlame_500k, y=expFlame_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE, 
+              fullrange = TRUE) + 
+  labs(title="Year 2039: Expected Total Flame Length",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated")
+plot_yr2039_expFlame_overall
+
+```
+
+We see that in 2039, increasing the intensity does reduce expBurn and expFlame overall (the blue trend line slope is less than the black 1:1 relationship line).
+
+There are many factors that we would like to consider, and we can begin to separate out plots to look at different aspects. The above plot includes all regions, all priorities, and all treatment types.
+
+For example, this is the same expBurn and expFlame plots as above, but faceted (grouped and separated) by region.
+
+```{r region}
+#region
+plot_yr2039_expBurn_reg <- ggplot() +
+  geom_point(data=res2039_trim,
+             aes(x=expBurn_500k, y=expBurn_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) +
+  geom_abline(intercept=0, slope=1) +
+  stat_smooth(data=res2039_trim,
+              aes(x=expBurn_500k, y=expBurn_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE,
+              fullrange = TRUE) +
+  labs(title="Year 2039: Expected Burned Acres",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") +
+  facet_wrap(~Region)
+plot_yr2039_expBurn_reg
+
+plot_yr2039_expFlame_reg <- ggplot() +
+  geom_point(data=res2039_trim,
+             aes(x=expFlame_500k, y=expFlame_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) +
+  geom_abline(intercept=0, slope=1) +
+  stat_smooth(data=res2039_trim,
+              aes(x=expFlame_500k, y=expFlame_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE,
+              fullrange = TRUE) +
+  labs(title="Year 2039: Expected Total Flame Length",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") +
+  facet_wrap(~Region)
+plot_yr2039_expFlame_reg
+
+
+```
+
+For example, this is the same expBurn and expFlame plots as above, but faceted (grouped and separated) by priority and treatment type. 
+
+```{r prioritytype}
+plot_yr2039_expBurn_pt <- ggplot() + 
+  geom_point(data=res2039_trim, 
+             aes(x=expBurn_500k, y=expBurn_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  stat_smooth(data=res2039_trim,
+              aes(x=expBurn_500k, y=expBurn_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE, 
+              fullrange = TRUE) + 
+  labs(title="Year 2039: Expected Burned Acres",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") +
+  facet_wrap(~Priority+TxType)
+plot_yr2039_expBurn_pt
+
+plot_yr2039_expFlame_pt <- ggplot() + 
+  geom_point(data=res2039_trim, 
+             aes(x=expFlame_500k, y=expFlame_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  stat_smooth(data=res2039_trim,
+              aes(x=expFlame_500k, y=expFlame_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE, 
+              fullrange = TRUE) + 
+  labs(title="Year 2039: Expected Total Flame Length",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") +
+  facet_wrap(~Priority+TxType)
+plot_yr2039_expFlame_pt
+
+```
+
+
+### SC Region
+
+We could want to only look at one region at a time, so we can add another filtering step. 
+
+```{r scregion}
+#SC only
+res2039sc <- res2039_trim %>% 
+  filter(Region == "SC")
+```
+
+And then we can repeat our graphing, perhaps for both priority and treatment type. 
+
+```{r scpt}
+plot_yr2039_sc_expBurn_pt <- ggplot() + 
+  geom_point(data=res2039sc, 
+             aes(x=expBurn_500k, y=expBurn_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  stat_smooth(data=res2039sc,
+              aes(x=expBurn_500k, y=expBurn_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE, 
+              fullrange = TRUE) + 
+  labs(title="SC: Year 2039: Expected Burned Acres",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") +
+  facet_wrap(~Priority+TxType)
+plot_yr2039_sc_expBurn_pt
+
+plot_yr2039_sc_expFlame_pt <- ggplot() + 
+  geom_point(data=res2039sc, 
+             aes(x=expFlame_500k, y=expFlame_2m),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  stat_smooth(data=res2039sc,
+              aes(x=expFlame_500k, y=expFlame_2m),
+              method=lm,
+              geom="smooth",
+              formula = 'y ~ x',
+              se = FALSE, 
+              fullrange = TRUE) + 
+  labs(title="SC: Year 2039: Expected Total Flame Length",
+       x="Baseline (500k Acres Treated)",
+       y="2.3 Million Acres Treated") +
+  facet_wrap(~Priority+TxType)
+plot_yr2039_sc_expFlame_pt
+```
+
+#### Boxplots 
+
+Joint distribution plots are convenient for comparing two aspects against each other, but we can also graph some of the same information in different ways. To avoid too cluttered of charts, we may need to partition the dataset in some fashion (filtering or faceting). 
+
+```{r scboxplot}
+
+# Returning to original 2039 dataset
+r39sc <- res2039 %>% 
+  filter(Region == "SC") %>% 
+  # Need a single field for labeling scenario
+  mutate(scenario = paste0(Priority, " - ", 
+                           TxIntensity, " - ", 
+                           TxType),
+         scenario_intensity_type = paste0(TxIntensity, " - ", TxType))
+
+ggplot() +
+  geom_boxplot(data=r39sc,
+               mapping=aes(x=scenario_intensity_type, y=expBurn)) +
+    labs(title="SC: Year 2039: Expected Burned Acres per HUC",
+       x="Intensity - Treatment Type",
+       y="Expected burned acres") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
+  facet_wrap(~Priority) 
+  
+ggplot() +
+  geom_boxplot(data=r39sc,
+               mapping=aes(x=scenario_intensity_type, y=expFlame)) +
+    labs(title="SC: Year 2039: Expected Total Flame Length per HUC",
+       x="Intensity - Treatment Type",
+       y="Expected total flame length") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
+  facet_wrap(~Priority) 
+  
+
+
+```
+
+Instead of individual HUC points, we may wish to add all burned area together, region-wide.
+
+```{r scbargraph}
+
+r39sc_summarized <- r39sc %>% 
+  group_by(Priority, TxIntensity, TxType) %>% 
+  summarize(sum_expBurn = sum(expBurn),
+            .groups="drop") %>% 
+  mutate(intensity_type = paste0(TxIntensity, " - ", TxType),
+         priority_intensity = paste0(Priority, " - ", TxIntensity))
+
+ggplot() +
+  geom_col(data=r39sc_summarized,
+               mapping=aes(x=intensity_type, y=sum_expBurn)) +
+    labs(title="SC: Year 2039: Total Expected Burned Acres",
+       x="Intensity - Treatment Type",
+       y="Total expected burned acres") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
+  facet_wrap(~Priority) 
+
+
+```
+
+Or reworking the summarizing and faceting, here's another way to view the same information. 
+
+```{r scbar2}
+r39sc_sum2 <- r39sc %>% 
+  group_by(Priority, TxIntensity, TxType) %>% 
+  summarize(sum_expBurn = sum(expBurn),
+            .groups="drop")
+
+ggplot() +
+  geom_col(data=r39sc_sum2,
+               mapping=aes(x=TxIntensity, y=sum_expBurn)) +
+    labs(title="SC: Year 2039: Total Expected Burned Acres",
+       x="Intensity",
+       y="Total expected burned acres") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
+  facet_wrap(~Priority+TxType) 
+
+
+```
+
+
+## Timeseries
+
+The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. 
+
+```{r tssetup}
+
+#We return to our results (res) before filtering on the year
+
+#Relabeling group with their treatment year (year treatment applied in FVS)
+res <- res %>% 
+  mutate(fireGrpLbl = case_when(
+    fireGroup == 25 ~ "2024 (25)",
+    fireGroup == 50 ~ "2029 (50)",
+    fireGroup == 75 ~ "2034 (75)",
+    fireGroup == 100 ~ "2039 (100)",
+    .default = as.character(fireGroup)
+  )) %>% 
+  #Highest WUI group treated at first and last time step, 
+  # and lowest WUI group is not treated
+  mutate(wuiGrpLbl = case_when(
+    wuiGroup == 25 ~ "2024_2039 (25)",
+    wuiGroup == 50 ~ "2029 (50)",
+    wuiGroup == 75 ~ "2034 (75)",
+    wuiGroup == 100 ~ "not treated",
+    .default = as.character(wuiGroup)
+  )) %>% 
+  mutate(hybridGrpLbl = case_when(
+    hybridGroup == 25 ~ "2024 (25)",
+    hybridGroup == 50 ~ "2029 (50)",
+    hybridGroup == 75 ~ "2034 (75)",
+    hybridGroup == 100 ~ "2039 (100)",
+    .default = as.character(hybridGroup)
+  ))
+
+#To ensure these years are displayed on graphs  
+year_breaks <- c(2024, 2029, 2034, 2039) 
+
+```
+
+Let's select SC as our region, 'Fire' as the priority, and 'trt4' as the treatment type. We'll look at the three intensities over the four years. 
+
+```{r ts}
+
+res_sc_f4 <- res %>% 
+  filter(Region == "SC",
+         Priority == "Fire",
+         TxType = "trt4")
+
+# TODO Check free_y or not. 
+
+ggplot() +
+  geom_boxplot(data = res_sc_f4,
+               mapping = aes(x = Year, y = expBurn, group=Year)) +
+  scale_x_continuous(breaks = year_breaks) +
+  facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+  labs(title = paste(this_reg,
+                     this_priority,
+                     this_trt))
+
+
+ggplot() +
+  geom_boxplot(data = res_sc_f4,
+               mapping = aes(x = Year, y = expFlame, group=Year)) +
+  scale_x_continuous(breaks = year_breaks) +
+  facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+  labs(title = paste(this_reg,
+                     this_priority,
+                     this_trt))
+
+
+```
+
+
+
+
