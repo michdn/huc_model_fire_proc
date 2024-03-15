@@ -31,6 +31,23 @@ fvs_names <- read_csv(file.path("data", "FvsNames.csv"))
 
 #create folders that look like R:/rem/RunID36_CC_Fire_2m_trt4/FVS_fuels/blended_outputs/
 
+#create NC trt7 runids. 
+fvs_nc7 <- fvs_names %>% 
+  filter(grepl('NC.+trt4', name)) %>% 
+  mutate(name = str_replace(name, 'trt4', 'trt7'))
+
+#remove NC trt4, add in trt7
+fvs_names <- fvs_names %>% 
+  #! is not
+  filter(!grepl('NC.+trt4', name)) %>% 
+  bind_rows(fvs_nc7) %>% 
+  #temporary just for nice sorting
+  mutate(run = str_split(name, "_") %>% map_chr(.,1),
+         id = str_remove(run, "\\D+") %>% as.numeric()) %>%
+  arrange(id) %>% 
+  select(name)
+
+
 fvs_names <- fvs_names %>% 
   mutate(runid_folders = file.path('R:',
                                    'rem',

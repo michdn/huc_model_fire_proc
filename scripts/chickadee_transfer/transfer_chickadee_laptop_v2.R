@@ -16,7 +16,8 @@ shared <- file.path("R:", "rem")
 
 # run ids, include _ if runid only, important for single digit runids
 selected_runs <- 
-  'CC.+trt6'
+  '' #SN
+  #'CC.+trt6'
   #'RunID30_.+trt6|RunID32_.+trt6|RunID33_.+trt1|RunID34_.+trt1|RunID35_.+trt4|RunID36_.+trt4' #CC
   #'RunID21_.+trt1|RunID25_.+trt1|RunID23_.+trt1' # trt4 # part of SC
   #'RunID25_|RunID20_ #trt1 #part of SC
@@ -30,8 +31,23 @@ outfolder <- file.path(
   "C", "Users", "nekodawn", "code_local", 
   "huc_model_fire", "qaqc_fvs", "cc_qaqc") #sc_qaqc, cc_qaqc, nc_qaqc, sn_qaqc
 
-
+#original fvs
 fvs_names <- read_csv(file.path("data", "FvsNames.csv"))
+#create NC trt7 runids. 
+fvs_nc7 <- fvs_names %>% 
+  filter(grepl('NC.+trt4', name)) %>% 
+  mutate(name = str_replace(name, 'trt4', 'trt7'))
+
+#remove NC trt4, add in trt7
+fvs_names <- fvs_names %>% 
+  #! is not
+  filter(!grepl('NC.+trt4', name)) %>% 
+  bind_rows(fvs_nc7) %>% 
+  #temporary just for nice sorting
+  mutate(run = str_split(name, "_") %>% map_chr(.,1),
+         id = str_remove(run, "\\D+") %>% as.numeric()) %>%
+  arrange(id) %>% 
+  select(name)
 
 
 ### select files -----------------------------------------------------
