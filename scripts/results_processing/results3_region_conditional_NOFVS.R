@@ -9,7 +9,7 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SC"
+reg_code <- "CC"
 
 input_folder <- file.path('results', 'extracts')
 # file.path('run_202401_badblend', 'results_raw_extraction_test') 
@@ -23,13 +23,13 @@ dir.create(output_folder, recursive = TRUE)
 
 #to get area for priority groups
 hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
-#hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+  #st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
-#Anna's FVS results
-fvs <- read_csv(file.path('results',
-                          'FVSprocessedOutputsHucs_v2.csv')) %>%
-  mutate(HUC12 = as.character(HUC12)) %>% 
-  rename(Region = RRK)
+# #Anna's FVS results
+# fvs <- read_csv(file.path('results',
+#                           'FVSprocessedOutputsHucs_v2.csv')) %>%
+#   mutate(HUC12 = as.character(HUC12)) %>% 
+#   rename(Region = RRK)
 
 
 ### SQL extraction, every fire results -------------------------
@@ -130,12 +130,13 @@ res <- combined
 
 ### Add FVS -------------------------------------------------------------------
 
-#join FVS results with fire results
-res_all <- fvs %>% 
-  inner_join(res,
-             by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
-nrow(res_all) # confirm still 306,396
+# #join FVS results with fire results
+# res_all <- fvs %>% 
+#   inner_join(res,
+#              by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
+# nrow(res_all) # confirm still 306,396
 
+res_all <- res
 
 ### Rename RFFC, Add in area and percentile groups ----------------------------
 
@@ -177,7 +178,7 @@ stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(res_all, 
           file.path(output_folder, 
-                    paste0(reg_code, '_conditional_', stamp, '.csv')))
+                    paste0(reg_code, '_conditional_NOFVS_', stamp, '.csv')))
 
 
 

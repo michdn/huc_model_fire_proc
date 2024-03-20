@@ -14,6 +14,8 @@ pacman::p_load(
 
 #local function
 #matching Anna's field names
+# NOTE! str_split only works as expected b/c it's inside a function here
+# otherwise use tidyr::separate or str_split %>% map_chr(., n)
 split_rename_run <- function(df){
   df %>% 
     mutate(HUC12 = str_split(huc_id, "_")[[1]][2]) %>% 
