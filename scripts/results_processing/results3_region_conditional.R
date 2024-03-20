@@ -16,11 +16,14 @@ input_folder <- file.path('results', 'extracts')
  #file.path('results', 'csv_extraction')
 
 output_folder <- file.path('results', 'conditional')
+dir.create(output_folder, recursive = TRUE) 
+
 
 ### HUC & FVS data ----------------------------------------------------
 
 #to get area for priority groups
-hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
+#hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 #Anna's FVS results
 fvs <- read_csv(file.path('results',
@@ -125,12 +128,19 @@ res <- combined
 
 # res <- combined_full
 
+### Add FVS -------------------------------------------------------------------
+
+#join FVS results with fire results
+res_all <- fvs %>% 
+  inner_join(res,
+             by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
+nrow(res_all) # confirm still 306,396
 
 
-### Rename RFFC, Add in area and percentile groups ------------------------------------------------
+### Rename RFFC, Add in area and percentile groups ----------------------------
 
 #rename Priority RFFC to Hybrid
-res <- res %>%
+res_all <- res_all %>%
   #change name to Hybrid
   mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
 
@@ -138,11 +148,12 @@ res <- res %>%
 # TxBpPrct == for fire priority
 # TxRffcP == for RFFC (aka hybrid) priority
 # TxWPrct == for WUI priority
-res <- res %>%
+res_all <- res_all %>%
   left_join(hucs_shp %>%
               st_drop_geometry() %>%
               select(huc12,  hucAc,
-                     TxBpPrc, TxRffcP, TxWPrct) %>%
+                     TxBpPrc, TxRffcP, TxWPrct,
+                     timeFire, timeHybrid, timeWUI) %>%
               rename(fireGroup = TxBpPrc,
                      hybridGroup = TxRffcP,
                      wuiGroup = TxWPrct),
@@ -150,11 +161,12 @@ res <- res %>%
 
 
 #reorder nicely
-res <- res %>%
+res_all <- res_all %>%
   select(HUC12, Region,
          Priority, TxIntensity, TxType,
          run, Year, mas_scenario, 
          hucAc,
+         timeFire, timeHybrid, timeWUI,
          fireGroup, hybridGroup, wuiGroup,
          everything())
 
@@ -163,9 +175,9 @@ res <- res %>%
 
 stamp <- format(Sys.time(), "%Y%m%d")
 
-write_csv(res, 
+write_csv(res_all, 
           file.path(output_folder, 
-                    paste0(reg_code, '_conditional', stamp, '.csv')))
+                    paste0(reg_code, '_conditional_', stamp, '.csv')))
 
 
 

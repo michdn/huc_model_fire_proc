@@ -26,7 +26,8 @@ res <- read_csv(file.path(input_folder,
   mutate(HUC12 = as.character(HUC12))
 
 
-hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
+#hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 #Update cell size when changing abp rasters
 abp <- raster("other_datasets/ucsb_calfire/ucsb_burn_severity.tif")
