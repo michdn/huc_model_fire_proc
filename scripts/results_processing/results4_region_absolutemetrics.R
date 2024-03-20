@@ -12,17 +12,19 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SC"
+reg_code <- "CC"
+reg_file <- paste0(reg_code, '_conditional_NOFVS_20240319.csv')
 
 input_folder <- file.path('results', 'conditional')
 
 output_folder <- file.path('results', 'absolute')
+dir.create(output_folder, recursive = TRUE) 
 
 
 ### Data ----------------------------------------------------
 
 res <- read_csv(file.path(input_folder, 
-                          paste0(reg_code, '_conditional_TEST20240307.csv'))) %>% 
+                          reg_file)) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 
