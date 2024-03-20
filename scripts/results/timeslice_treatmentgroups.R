@@ -51,6 +51,8 @@ res <- res_orig %>%
     .default = as.character(hybridGroup)
   ))
 
+#NOTE: Versions past 2024-03-20 have timeFire, timeHybrid, timeWUI
+# use these for EXTERNAL, but can use above (since already written) for internal
 
 ### Looping version -----------------------------------------------
 
