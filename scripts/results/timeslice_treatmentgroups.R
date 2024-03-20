@@ -8,18 +8,13 @@ pacman::p_load(
 
 ### Base Data import -------------------------------------------
 
-# res_orig <- read_csv(file.path('results_csv', 
-#                                'datacube_weighted_20240212.csv')) %>% 
-#   mutate(HUC12 = as.character(HUC12))
-
-res_orig <- read_csv(file.path('run_202401_badblend',
-                               'results_raw_extraction_test',
-                               'SC_absolute_TEST20240307.csv')) %>% 
+res_orig <- read_csv(file.path('results',
+                          'absolute',
+                          'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
+
 ### Data set up ------------------------------------------------
-
-
 
 res <- res_orig %>% 
   #For graphing in the correct order

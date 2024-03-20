@@ -8,6 +8,11 @@
 
 # color = treated (by year) vs untreated 
 
+# Somewhat failed experiment
+#  In the treated group, each year has grow out in prev treated HUCs, 
+#   and weather changes. 
+# In the untreated group, each year pool is smaller and smaller, with
+#   usually low fire activity HUCs in the later pools. 
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -16,13 +21,9 @@ pacman::p_load(
 
 ### Base Data import -------------------------------------------
 
-# res_orig <- read_csv(file.path('results_csv', 
-#                                'datacube_weighted_20240212.csv')) %>% 
-#   mutate(HUC12 = as.character(HUC12))
-
-res_orig <- read_csv(file.path('run_202401_badblend',
-                               'results_raw_extraction_test',
-                               'SC_absolute_TEST20240307.csv')) %>% 
+res <- read_csv(file.path('results',
+                          'absolute',
+                          'SC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------
@@ -165,8 +166,6 @@ for (r in seq_along(regions)){
       ggsave(plot = burn_plot,
              filename = file.path(plot_folder, burn_file),
              width = 5, height = 7, units = 'in')
-      
-      
       
       
     } #end y yrs

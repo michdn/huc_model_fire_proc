@@ -13,12 +13,18 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse)
 
+### user ---------------------------------------------------
+
+#for the boxplots, free or fixed y axis? 
+box_scales <- "free_y" #"fixed"
+
 ### Results import -------------------------------------------
 
 # can change between region-only and full datacube. 
 # will overwrite
-res_orig <- read_csv(file.path('results_csv', 
-                               'datacube_weighted_20240212.csv')) %>% 
+res_orig <- read_csv(file.path('results',
+                               'absolute',
+                               'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------
@@ -143,13 +149,13 @@ for (r in seq_along(regions)){
         geom_boxplot(data = res_r_p_t,
                      mapping = aes(x = Year, y = HaCFL, group=Year)) +
         scale_x_continuous(breaks = year_breaks) +
-        facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) +
         labs(title = paste(this_reg,
                            this_priority,
                            this_trt))
 
       fn1 <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
-                    'boxplot_freey_', 'HaCFL.jpg')
+                    'boxplot_', box_scales, '_HaCFL.jpg')
       ggsave(plot = p1,
              filename = file.path(plot_folder, fn1),
              width = 8, height = 6, units = 'in')
@@ -159,13 +165,13 @@ for (r in seq_along(regions)){
         geom_boxplot(data = res_r_p_t,
                      mapping = aes(x = Year, y = expFlame, group=Year)) +
         scale_x_continuous(breaks = year_breaks) +
-        facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) + 
         labs(title = paste(this_reg,
                            this_priority,
                            this_trt))
 
       fn2 <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
-                    'boxplot_freey_', 'expFlame.jpg')
+                    'boxplot_', box_scales, '_expFlame.jpg')
       ggsave(plot = p2,
              filename = file.path(plot_folder, fn2),
              width = 8, height = 6, units = 'in')
@@ -176,13 +182,13 @@ for (r in seq_along(regions)){
         geom_boxplot(data = res_r_p_t,
                      mapping = aes(x = Year, y = HaCBP, group=Year)) +
         scale_x_continuous(breaks = year_breaks) +
-        facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) + 
         labs(title = paste(this_reg,
                            this_priority,
                            this_trt))
 
       fn3 <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
-                    'boxplot_freey_', 'HaCBP.jpg')
+                    'boxplot_', box_scales, '_HaCBP.jpg')
       ggsave(plot = p3,
              filename = file.path(plot_folder, fn3),
              width = 8, height = 6, units = 'in')
@@ -193,13 +199,13 @@ for (r in seq_along(regions)){
         geom_boxplot(data = res_r_p_t,
                      mapping = aes(x = Year, y = expBurn, group=Year)) +
         scale_x_continuous(breaks = year_breaks) +
-        facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) + 
         labs(title = paste(this_reg,
                            this_priority,
                            this_trt))
 
       fn4 <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
-                    'boxplot_freey_', 'expBurn.jpg')
+                    'boxplot_', box_scales, '_expBurn.jpg')
       ggsave(plot = p4,
              filename = file.path(plot_folder, fn4),
              width = 8, height = 6, units = 'in')

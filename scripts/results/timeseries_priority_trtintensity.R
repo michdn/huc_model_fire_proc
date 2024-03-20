@@ -8,7 +8,6 @@
 
 # loop regions, priorities
 
-# IN PROGRESS
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -19,10 +18,9 @@ pacman::p_load(
 
 # can change between region-only and full datacube. 
 # will overwrite
-res_orig <- read_csv(file.path(
-  'run_202401_badblend',
-  'results_csv', 
-  'datacube_weighted_20240212.csv')) %>% 
+res_orig <- read_csv(file.path('results',
+                          'absolute',
+                          'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------
