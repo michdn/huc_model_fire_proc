@@ -26,8 +26,9 @@ hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
 #hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 #Anna's FVS results
-fvs <- read_csv(file.path('results',
-                          'FVSprocessedOutputsHucs_v2.csv')) %>%
+fvs <- read_csv(file.path('data',
+                          'data_fvs',
+                          'FVSprocessedOutputsHucsSsCcSn.csv')) %>%
   mutate(HUC12 = as.character(HUC12)) %>% 
   rename(Region = RRK)
 
