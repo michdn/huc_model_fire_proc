@@ -375,69 +375,67 @@ ggplot() +
 
 ## Timeseries
 
-The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. 
+The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. Let's select SC as our region, 'Fire' as the priority, and 'trt4' as the treatment type. We'll look at the three intensities over the four years. 
 
 ```{r tssetup}
 
-#We return to our results (res) before filtering on the year
+#Select an example scenario
+this_region <- 'SC'
+this_priority <- 'Fire'
+this_trt <- 'trt4'
 
-#Relabeling group with their treatment year (year treatment applied in FVS)
-res <- res %>% 
-  mutate(fireGrpLbl = case_when(
-    fireGroup == 25 ~ "2024 (25)",
-    fireGroup == 50 ~ "2029 (50)",
-    fireGroup == 75 ~ "2034 (75)",
-    fireGroup == 100 ~ "2039 (100)",
-    .default = as.character(fireGroup)
-  )) %>% 
-  #Highest WUI group treated at first and last time step, 
-  # and lowest WUI group is not treated
-  mutate(wuiGrpLbl = case_when(
-    wuiGroup == 25 ~ "2024_2039 (25)",
-    wuiGroup == 50 ~ "2029 (50)",
-    wuiGroup == 75 ~ "2034 (75)",
-    wuiGroup == 100 ~ "not treated",
-    .default = as.character(wuiGroup)
-  )) %>% 
-  mutate(hybridGrpLbl = case_when(
-    hybridGroup == 25 ~ "2024 (25)",
-    hybridGroup == 50 ~ "2029 (50)",
-    hybridGroup == 75 ~ "2034 (75)",
-    hybridGroup == 100 ~ "2039 (100)",
-    .default = as.character(hybridGroup)
-  ))
+#We return to our results (res) before filtering on the year, 
+# and filter to the selected
+res_example <- res %>% 
+  filter(Region == this_region,
+         Priority == this_priority,
+         TxType == this_trt)
+
+
+#Set timing group, the if/else is useful if you are working inside a loop
+if (this_priority == "Fire"){
+  res_example <- res_example %>% 
+    mutate(timing_group = timeFire) 
+} else if (this_priority == "WUI"){
+  res_example <- res_example %>% 
+    mutate(timing_group = timeWUI)
+} else if (this_priority == "Hybrid"){
+  res_example <- res_example %>% 
+    mutate(timing_group = timeHybrid) 
+} else {
+  stop("Unmatched priority timing group")
+}
 
 #To ensure these years are displayed on graphs  
 year_breaks <- c(2024, 2029, 2034, 2039) 
 
 ```
 
-Let's select SC as our region, 'Fire' as the priority, and 'trt4' as the treatment type. We'll look at the three intensities over the four years. 
+We'll plot boxplots with the year along the x-axis and different metrics on the y-axis. The graphs will facet on intensity and timing group. 
 
-```{r ts}
+```{r tsplots}
 
-res_sc_f4 <- res %>% 
-  filter(Region == "SC",
-         Priority == "Fire",
-         TxType = "trt4")
+# Note: the scales can either be fixed across all facets, or set per panel.
+#  Fixed is nice that all axes are the same, but if there are large differences
+#   in values, you may find that free_y produces better graphs. 
+scales_box <- 'fixed' #'free_y'
 
-# TODO Check free_y or not. 
 
 ggplot() +
-  geom_boxplot(data = res_sc_f4,
+  geom_boxplot(data = res_example,
                mapping = aes(x = Year, y = expBurn, group=Year)) +
   scale_x_continuous(breaks = year_breaks) +
-  facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+  facet_wrap(~TxIntensity+timing_group, scales=scales_box) +
   labs(title = paste(this_reg,
                      this_priority,
                      this_trt))
 
 
 ggplot() +
-  geom_boxplot(data = res_sc_f4,
+  geom_boxplot(data = res_example,
                mapping = aes(x = Year, y = expFlame, group=Year)) +
   scale_x_continuous(breaks = year_breaks) +
-  facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+  facet_wrap(~TxIntensity+timing_group, scales=scales_box) +
   labs(title = paste(this_reg,
                      this_priority,
                      this_trt))
