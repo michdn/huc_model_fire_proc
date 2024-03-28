@@ -28,9 +28,11 @@ hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
 #Anna's FVS results
 fvs <- read_csv(file.path('data',
                           'data_fvs',
-                          'FVSprocessedOutputsHucsSsCcSn.csv')) %>%
-  mutate(HUC12 = as.character(HUC12)) %>% 
-  rename(Region = RRK)
+                          'FVSprocessedOutputsHucsScCcSn.csv')) %>%
+  mutate(huc12 = as.character(huc12)) %>% 
+  rename(Region = region,
+         HUC12 = huc12,
+         TxIntensity = Intensity)
 
 
 ### SQL extraction, every fire results -------------------------
@@ -134,7 +136,7 @@ res <- combined
 #join FVS results with fire results
 res_all <- fvs %>% 
   inner_join(res,
-             by = c("HUC12", "RRK", "Priority", "TxIntensity", "TxType", "run", "Year"))
+             by = c("HUC12", "Region", "Priority", "TxIntensity", "TxType", "run", "Year"))
 nrow(res_all) # confirm still 306,396
 
 
