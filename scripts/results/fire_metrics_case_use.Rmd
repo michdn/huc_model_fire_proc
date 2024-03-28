@@ -19,21 +19,54 @@ The full dataset includes multiple outcome metrics for 27 scenarios (with differ
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
-  tidyverse)
+  tidyverse,
+  #for plotting map
+  sf,
+  ggspatial,
+  viridis,
+  scales)
 ```
 
 ## Single Year: 2039
 
 Initially, we will select a single year, 2039, to explore. A note on weather: The weather in the fire modeling is based on current weather for 2024 and 2029 timesteps, but includes future weather predictions for 2034 and 2039. Whenever you are doing cross-years comparisons, you should remember that there are also weather effects in play.
 
-```{r yr2039}
-### Data import -------------------------------------------
-
-res_orig <- read_csv(file.path('..', '..', 'results_csv', 
-                          'datacube_weighted_20240212.csv')) %>% 
+```{r hiddenresimport, include=FALSE, echo=FALSE}
+#run but not show
+res_sc <- read_csv(file.path('results',
+                          'absolute',
+                          'SC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-#Setting a factor order so that graphs show in this order
+res_cc <- read_csv(file.path('results',
+                             'absolute',
+                             'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+  mutate(HUC12 = as.character(HUC12))
+
+res_orig <- bind_rows(res_sc, res_cc)
+
+#hidden section to update current interim datacube to what will be in final
+hucs_timing <- st_read("../../data/data_huc/TxHucsTimingGroups.shp")
+res_orig <- res_orig %>%
+  left_join(hucs_timing %>%
+              st_drop_geometry() %>%
+              select(huc12,
+                     timeFire, timeHybrid, timeWUI),
+            by = join_by("HUC12" == "huc12"))
+
+
+```
+
+```{r resimport, eval=FALSE}
+#read in data
+res_orig <- read_csv("datacube.csv") %>% 
+  mutate(HUC12 = as.character(HUC12))
+
+```
+
+```{r yr2039}
+
+#Set a factor order so that graphs show in this order
 # Want priority order: 'Fire', 'WUI', 'Hybrid'
 # Want intensity order: '500k', '1m', '2m'
 
@@ -54,7 +87,7 @@ res2039 <- res %>%
 
 ```
 
-Suppose we are interested in comparing the difference between the different intensity scenarios (500k, 1m, and 2m). We can filter our dataset three times, once for each intensity group. We rename the outcome metrics to reflect what intensity the scenario was. 
+Suppose we are interested in comparing the difference between the different intensity scenarios: 500k and 2m (2.3 million). We can filter our dataset twice times, once for each intensity group. We rename the outcome metrics to reflect what intensity the scenario was. 
 
 ```{r intensity}
 
@@ -63,12 +96,6 @@ res2039_500k <- res2039 %>%
   rename(expBurn_500k = expBurn, 
          expFlame_500k = expFlame,
          expAcf_500k = expPcActive)
-
-res2039_1m <- res2039 %>% 
-  filter(TxIntensity == "1m") %>% 
-  rename(expBurn_1m = expBurn, 
-         expFlame_1m = expFlame,
-         expAcf_1m = expPcActive)
 
 res2039_2m <- res2039 %>% 
   filter(TxIntensity == "2m") %>% 
@@ -83,7 +110,6 @@ Then we will join our different intensity tables with each other, careful to mat
 ```{r intensityjoin}
 
 res2039_jt <- res2039_500k %>% 
-  left_join(res2039_1m, by = join_by(HUC12, Region, Priority, TxType)) %>%  
   left_join(res2039_2m, by = join_by(HUC12, Region, Priority, TxType)) 
 
 
@@ -118,7 +144,7 @@ plot_yr2039_expBurn_overall <- ggplot() +
               se = FALSE, 
               fullrange = TRUE) + 
   labs(title="Year 2039: Expected Burned Acres",
-       x="Baseline (500k Acres Treated)",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated")
 plot_yr2039_expBurn_overall
 
@@ -136,8 +162,8 @@ plot_yr2039_expFlame_overall <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 2039: Expected Total Flame Length",
-       x="Baseline (500k Acres Treated)",
+  labs(title="Year 2039: Expected Total Flame Index",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated")
 plot_yr2039_expFlame_overall
 
@@ -165,7 +191,7 @@ plot_yr2039_expBurn_reg <- ggplot() +
               se = FALSE,
               fullrange = TRUE) +
   labs(title="Year 2039: Expected Burned Acres",
-       x="Baseline (500k Acres Treated)",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region)
 plot_yr2039_expBurn_reg
@@ -183,8 +209,8 @@ plot_yr2039_expFlame_reg <- ggplot() +
               formula = 'y ~ x',
               se = FALSE,
               fullrange = TRUE) +
-  labs(title="Year 2039: Expected Total Flame Length",
-       x="Baseline (500k Acres Treated)",
+  labs(title="Year 2039: Expected Total Flame Index",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region)
 plot_yr2039_expFlame_reg
@@ -209,7 +235,7 @@ plot_yr2039_expBurn_pt <- ggplot() +
               se = FALSE, 
               fullrange = TRUE) + 
   labs(title="Year 2039: Expected Burned Acres",
-       x="Baseline (500k Acres Treated)",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
 plot_yr2039_expBurn_pt
@@ -227,8 +253,8 @@ plot_yr2039_expFlame_pt <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 2039: Expected Total Flame Length",
-       x="Baseline (500k Acres Treated)",
+  labs(title="Year 2039: Expected Total Flame Index",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
 plot_yr2039_expFlame_pt
@@ -263,7 +289,7 @@ plot_yr2039_sc_expBurn_pt <- ggplot() +
               se = FALSE, 
               fullrange = TRUE) + 
   labs(title="SC: Year 2039: Expected Burned Acres",
-       x="Baseline (500k Acres Treated)",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
 plot_yr2039_sc_expBurn_pt
@@ -281,8 +307,8 @@ plot_yr2039_sc_expFlame_pt <- ggplot() +
               formula = 'y ~ x',
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="SC: Year 2039: Expected Total Flame Length",
-       x="Baseline (500k Acres Treated)",
+  labs(title="SC: Year 2039: Expected Total Flame Index",
+       x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType)
 plot_yr2039_sc_expFlame_pt
@@ -316,9 +342,9 @@ ggplot() +
 ggplot() +
   geom_boxplot(data=r39sc,
                mapping=aes(x=scenario_intensity_type, y=expFlame)) +
-    labs(title="SC: Year 2039: Expected Total Flame Length per HUC",
+    labs(title="SC: Year 2039: Expected Total Flame Index per HUC",
        x="Intensity - Treatment Type",
-       y="Expected total flame length") +
+       y="Expected total flame index") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
   facet_wrap(~Priority) 
@@ -373,78 +399,291 @@ ggplot() +
 ```
 
 
-## Timeseries
+## Timeseries (boxplots)
 
-The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. 
+The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. Let's select SC as our region, 'Fire' as the priority, and 'trt4' (heavy thinning without removal) as the treatment type. We'll look at the three intensities over the four years. 
 
 ```{r tssetup}
 
-#We return to our results (res) before filtering on the year
+#Select an example scenario
+this_region <- 'SC'
+this_priority <- 'Fire'
+this_trt <- 'trt4'
+#create a new nice treatment label
+trt_desc <- case_when(
+  this_trt == "trt1" ~ "Moderate thinning biomass removal",
+  this_trt == "trt4" ~ "Heavy thinning",
+  this_trt == "trt6" ~ "Heavy Mastication", 
+  this_trt == "trt7" ~ "Prescribed fire",
+  .default = "Type not found") 
+  
+#We return to our results (res) before filtering on the year, 
+# and filter to the selected
+res_example <- res %>% 
+  filter(Region == this_region,
+         Priority == this_priority,
+         TxType == this_trt) 
 
-#Relabeling group with their treatment year (year treatment applied in FVS)
-res <- res %>% 
-  mutate(fireGrpLbl = case_when(
-    fireGroup == 25 ~ "2024 (25)",
-    fireGroup == 50 ~ "2029 (50)",
-    fireGroup == 75 ~ "2034 (75)",
-    fireGroup == 100 ~ "2039 (100)",
-    .default = as.character(fireGroup)
-  )) %>% 
-  #Highest WUI group treated at first and last time step, 
-  # and lowest WUI group is not treated
-  mutate(wuiGrpLbl = case_when(
-    wuiGroup == 25 ~ "2024_2039 (25)",
-    wuiGroup == 50 ~ "2029 (50)",
-    wuiGroup == 75 ~ "2034 (75)",
-    wuiGroup == 100 ~ "not treated",
-    .default = as.character(wuiGroup)
-  )) %>% 
-  mutate(hybridGrpLbl = case_when(
-    hybridGroup == 25 ~ "2024 (25)",
-    hybridGroup == 50 ~ "2029 (50)",
-    hybridGroup == 75 ~ "2034 (75)",
-    hybridGroup == 100 ~ "2039 (100)",
-    .default = as.character(hybridGroup)
-  ))
+
+#Set timing group, the if/else is useful if you are working inside a loop
+if (this_priority == "Fire"){
+  res_example <- res_example %>% 
+    mutate(timing_group = timeFire) 
+} else if (this_priority == "WUI"){
+  res_example <- res_example %>% 
+    mutate(timing_group = timeWUI)
+} else if (this_priority == "Hybrid"){
+  res_example <- res_example %>% 
+    mutate(timing_group = timeHybrid) 
+} else {
+  stop("Unmatched priority timing group")
+}
 
 #To ensure these years are displayed on graphs  
 year_breaks <- c(2024, 2029, 2034, 2039) 
 
 ```
 
-Let's select SC as our region, 'Fire' as the priority, and 'trt4' as the treatment type. We'll look at the three intensities over the four years. 
+We'll plot boxplots with the year along the x-axis and different metrics on the y-axis. The graphs will facet on intensity and timing group. 
 
-```{r ts}
+```{r tsplots}
 
-res_sc_f4 <- res %>% 
-  filter(Region == "SC",
-         Priority == "Fire",
-         TxType = "trt4")
+# Note: the scales can either be fixed across all facets, or set per panel.
+#  Fixed is nice that all axes are the same, but if there are large differences
+#   in values, you may find that free_y produces better graphs. 
+scales_box <- 'fixed' #'free_y'
 
-# TODO Check free_y or not. 
 
 ggplot() +
-  geom_boxplot(data = res_sc_f4,
+  geom_boxplot(data = res_example,
                mapping = aes(x = Year, y = expBurn, group=Year)) +
   scale_x_continuous(breaks = year_breaks) +
-  facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+  facet_wrap(~TxIntensity+timing_group, scales=scales_box) +
   labs(title = paste(this_reg,
                      this_priority,
-                     this_trt))
+                     trt_desc))
 
 
 ggplot() +
-  geom_boxplot(data = res_sc_f4,
+  geom_boxplot(data = res_example,
                mapping = aes(x = Year, y = expFlame, group=Year)) +
   scale_x_continuous(breaks = year_breaks) +
-  facet_wrap(~TxIntensity+timing_group, scales='free_y') +
+  facet_wrap(~TxIntensity+timing_group, scales=scales_box) +
   labs(title = paste(this_reg,
                      this_priority,
-                     this_trt))
+                     trt_desc))
 
 
 ```
 
 
+## Timeseries (Line graphs)
 
+We can also look at a timeseries of the average of all HUCs (irrespective of timing group). In the example below, we've selected a region and treatment type, and will show timeseries linegraphs by priority (color) and intensity (line type). This way, we can somewhat compare scenarios of the same treatment type against each other. 
+
+```{r tsline}
+
+#Select an example trt
+this_region <- 'SC'
+this_trt <- 'trt4'
+
+#create a new nice treatment label
+trt_desc <- case_when(
+  this_trt == "trt1" ~ "Moderate thinning biomass removal",
+  this_trt == "trt4" ~ "Heavy thinning",
+  this_trt == "trt6" ~ "Heavy Mastication", 
+  this_trt == "trt7" ~ "Prescribed fire",
+  .default = "Type not found") 
+  
+#We return to our results (res) before filtering on the year, 
+# and filter to the selected
+res_exline <- res %>% 
+  filter(Region == this_region,
+         TxType == this_trt) 
+
+res_exline_mean <- res_exline %>% 
+  group_by(Year, TxIntensity, Priority) %>% 
+  #several options for metric
+  summarize(ave_expBurn = mean(expBurn),
+            sum_expBurn = sum(expBurn),
+            ave_expFlame = mean(expFlame),
+            ave_expFlamehAc = mean(expFlame/hucAc),
+            ave_active = mean(expPcActive))
+
+ggplot() +
+  geom_line(data = res_exline_mean,
+            mapping = aes(x=Year, y=ave_expFlame, 
+                          color=Priority, linetype=TxIntensity)) +
+  scale_x_continuous(breaks = year_breaks) +
+  scale_color_manual("Priority", values = c('#b81267', '#4daf4a', '#377eb8')) +
+  scale_linetype_manual("Intensity", values = c('solid', 'dashed', 'dotted')) +
+  labs(title = paste(this_region,
+                     trt_desc),
+       y = 'Mean of expFlame')
+
+
+```
+
+Similar graphs could be done by switching treatment type and priority around, such that for a particular priority, you can compare all treatment types and intensities. 
+
+Note that this is collapsing all HUCs (averaging) so we may not be seeing the variability of the HUCs within a scenario. 
+
+
+## Maps and Best Scenarios
+
+It is also possible to join the datacube data with spatial data to create maps. The HUC12 watershed spatial data is available as a shapefile or geopackage. 
+
+```{r hiddenspatialread, include=FALSE, echo=FALSE}
+hucs_spatial <- st_read(file.path("..", "..", 
+                              "results", "spatial", 
+                              "huc12_watersheds.gpkg"))
+```
+
+```{r spatialread, eval=FALSE}
+
+#spatial data
+hucs_spatial <- st_read("huc12_watersheds.gpkg"))
+
+#For faster drawing in R, you can use a simplified version
+# Uncomment and join with this later on instead of hucs_spatial
+#hucs_simpl <- sf::st_simplify(hucs_spatial, preserveTopology = TRUE, dTolerance = 200)
+
+#If CA state boundary wanted, download from 
+# https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html
+#states <- st_read("data/tl_2023_us_state/tl_2023_us_state.shp")
+#ca <- states %>% filter(STUSPS == "CA")
+
+```
+
+Going back to our datacube results for a moment, for more descriptive labels on graphs or maps, we can create new variables based on the value in TxType. 
+
+```{r trtlabel}
+
+### relabeling trt --------------------------------
+
+res <- res %>% 
+  mutate(trt_desc = case_when(
+    TxType == "trt1" ~ "Mod thin removal",
+    TxType == "trt4" ~ "Heavy thinning",
+    TxType == "trt6" ~ "Mastication", 
+    TxType == "trt7" ~ "Prescribed fire",
+    .default = "Type not found"
+  ))
+
+```
+
+In this case, we will look at the average flame index (expFlame) over all years (2024, 2029, 2034, 2039). We will group our data by HUC and scenario (and notably not year, unlike in other places), then summarize to calculate the mean of expFlame. Then we arrange our dataset by the mean of expFlame and take the first (lowest) value per HUC12. This leaves us with a single row per HUC of the scenario that produced the lowest flame index for that HUC. 
+
+```{r lowestflame}
+
+### Lowest flame index, averaged over all years --------------
+
+res_ave <- res %>% 
+  # note, NOT by year, averaging over all years
+  group_by(HUC12, Priority, TxIntensity, TxType, trt_desc) %>% 
+  summarize(mean_expFlame = mean(expFlame),
+            count_check = n(),
+            .groups = 'drop')
+
+
+lowest_flame <- res_ave %>% 
+  #by HUC
+  group_by(HUC12) %>% 
+  #lowest value first
+  arrange(mean_expFlame) %>% 
+  #take first
+  slice(1)
+
+```
+
+By grouping and summarizing on different scenario aspects (priority, intensity, treatment type), we can count how many HUCs have the lowest flame index with that value. 
+
+```{r bestflamecounts}
+
+lowest_flame %>% 
+  group_by(Priority) %>% 
+  summarize(count = n())
+
+lowest_flame %>% 
+  group_by(TxIntensity) %>% 
+  summarize(count = n())
+
+lowest_flame %>% 
+  group_by(trt_desc) %>% 
+  summarize(count = n())
+
+lowest_flame %>% 
+  group_by(Priority, TxIntensity, trt_desc) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) 
+
+
+#add scenario name
+lowest_flame <- lowest_flame %>% 
+  mutate(scenario_itp = paste0(TxIntensity, "-", trt_desc, "-", Priority))
+
+```
+
+Then we can join our spatial data to our lowest flame index dataset and prepare to create a map. 
+
+```{r spatialjoin}
+#add spatial data 
+
+# If you are using a datacube with a subset of HUCs 
+# use jan INNER join to only get hucs in this cube. 
+# Otherwise, a left_join is the standard function used here. 
+hucs_lowest <- hucs_spatial %>% 
+  inner_join(lowest_flame,
+            by = join_by("HUC12"))
+
+```
+
+We can map using R, as in the example below, but you may also wish to save our your new spatial dataset to map in QGIS, ESRI ArcGIS, or other GIS software. 
+
+```{r bestmap}
+
+plot_best <- ggplot() +
+  #California
+  #geom_sf(data = ca, color = "grey50", fill = NA, size = 0.1) + 
+  #HUCs
+  geom_sf(data = hucs_lowest, 
+          #color the HUC by scenario
+          aes(fill = scenario_itp),
+          color = "grey90", size = 0.01) +
+  #use viridis color scheme
+  scale_fill_viridis("Scenario", discrete=TRUE, option='viridis') + 
+  #plot settings for a nicer map
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        panel.background = element_blank(),
+        legend.title = element_text(size = 11),
+        legend.text = element_text(size = 10),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 13),
+        axis.text = element_text(family = 'sans'),
+        legend.position = "right",
+        legend.direction = "vertical") +
+  #add a scale bar
+  ggspatial::annotation_scale(
+    location = "bl", bar_cols = c("grey50", "white")) +
+  #add a north arrow
+  ggspatial::annotation_north_arrow(
+    location = "tr", which_north = "true",
+    height = unit(0.6, "cm"), width = unit(0.6, "cm"),
+    pad_x = unit(0.2, "in"), pad_y = unit(0.3, "in"),
+    style = ggspatial::north_arrow_minimal()) +
+  #add a plot title
+  labs(title = "Best scenario by HUC12, 2024-2039")
+
+plot_best
+
+#Note: To change the order of the scenario legend items in R, we would need to create a 27-level ordered factor, similar to what we did near the beginning with setting a factor order on Priority and TxIntensity. 
+# You may find it easier to do in QGIS where you can drag and drop to rearrange the order. 
+
+#Here is how you could save out the dataset to use in another program. 
+# st_write(hucs_lowest,
+#          dsn="scenario_lowest_flame.gpkg", #geopackage, or .shp for shapefile
+#          layer="scenario_lowest_flame")
+
+```
 

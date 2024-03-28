@@ -5,7 +5,7 @@
 
 # all regions, all scenarios
 # HaCBP, HaCFL
-# expBurn, expFlame
+# expBurn, expFlame, active
 
 
 ### Libraries -------------------------------------------------
@@ -16,7 +16,7 @@ pacman::p_load(
 ### user ---------------------------------------------------
 
 #for the boxplots, free or fixed y axis? 
-box_scales <- "free_y" #"fixed"
+box_scales <- "fixed" #"fixed" #free_y
 
 ### Results import -------------------------------------------
 
@@ -24,7 +24,7 @@ box_scales <- "free_y" #"fixed"
 # will overwrite
 res_orig <- read_csv(file.path('results',
                                'absolute',
-                               'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+                               'SC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------
@@ -43,30 +43,30 @@ res <- res_orig %>%
          TxIntensity = forcats::fct_relevel(TxIntensity,
                                             "500k", "1m", "2m"))
 
-# post 2024-03-20, new fields in cube: timeFire, timeHybrid, timeWUI
-# #relabeling groups
-# res <- res %>% 
-#   mutate(fireGrpLbl = case_when(
-#     fireGroup == 25 ~ "2024 (25)",
-#     fireGroup == 50 ~ "2029 (50)",
-#     fireGroup == 75 ~ "2034 (75)",
-#     fireGroup == 100 ~ "2039 (100)",
-#     .default = as.character(fireGroup)
-#   )) %>% 
-#   mutate(wuiGrpLbl = case_when(
-#     wuiGroup == 25 ~ "2024_2039 (25)",
-#     wuiGroup == 50 ~ "2029 (50)",
-#     wuiGroup == 75 ~ "2034 (75)",
-#     wuiGroup == 100 ~ "not treated",
-#     .default = as.character(wuiGroup)
-#   )) %>% 
-#   mutate(hybridGrpLbl = case_when(
-#     hybridGroup == 25 ~ "2024 (25)",
-#     hybridGroup == 50 ~ "2029 (50)",
-#     hybridGroup == 75 ~ "2034 (75)",
-#     hybridGroup == 100 ~ "2039 (100)",
-#     .default = as.character(hybridGroup)
-#   ))
+#post 2024-03-20, new fields in cube: timeFire, timeHybrid, timeWUI
+#relabeling groups
+res <- res %>%
+  mutate(fireGrpLbl = case_when(
+    fireGroup == 25 ~ "2024 (25)",
+    fireGroup == 50 ~ "2029 (50)",
+    fireGroup == 75 ~ "2034 (75)",
+    fireGroup == 100 ~ "2039 (100)",
+    .default = as.character(fireGroup)
+  )) %>%
+  mutate(wuiGrpLbl = case_when(
+    wuiGroup == 25 ~ "2024_2039 (25)",
+    wuiGroup == 50 ~ "2029 (50)",
+    wuiGroup == 75 ~ "2034 (75)",
+    wuiGroup == 100 ~ "not treated",
+    .default = as.character(wuiGroup)
+  )) %>%
+  mutate(hybridGrpLbl = case_when(
+    hybridGroup == 25 ~ "2024 (25)",
+    hybridGroup == 50 ~ "2029 (50)",
+    hybridGroup == 75 ~ "2034 (75)",
+    hybridGroup == 100 ~ "2039 (100)",
+    .default = as.character(hybridGroup)
+  ))
   
 year_breaks <- c(2024, 2029, 2034, 2039)
 
@@ -110,13 +110,13 @@ for (r in seq_along(regions)){
     # set as a known field name (to avoid passing field name as variable)
     if (this_priority == "Fire"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = timeFire) #fireGrpLbl
+        mutate(timing_group = fireGrpLbl) #timeFire
     } else if (this_priority == "WUI"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = timeWUI) #wuiGrpLbl
+        mutate(timing_group = wuiGrpLbl) #timeWUI
     } else if (this_priority == "Hybrid"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = timeHybrid) #hybridGrpLbl
+        mutate(timing_group = hybridGrpLbl) #timeHybrid
     } else {
       stop("Unmatched priority timing group")
     }
@@ -212,10 +212,43 @@ for (r in seq_along(regions)){
              width = 8, height = 6, units = 'in')
       
       
+      #plot 5 : boxplot all HUCs, active crown, timeseries
+      p5 <- ggplot() +
+        geom_boxplot(data = res_r_p_t,
+                     mapping = aes(x = Year, y = expPcActive, group=Year)) +
+        scale_x_continuous(breaks = year_breaks) +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) + 
+        labs(title = paste(this_reg,
+                           this_priority,
+                           this_trt))
+      
+      fn5 <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
+                    'boxplot_', box_scales, '_active.jpg')
+      ggsave(plot = p5,
+             filename = file.path(plot_folder, fn5),
+             width = 8, height = 6, units = 'in')
+      
+      
+      #plot 5b : boxplot all HUCs, surface, timeseries
+      p5b <- ggplot() +
+        geom_boxplot(data = res_r_p_t,
+                     mapping = aes(x = Year, y = expPcSurface, group=Year)) +
+        scale_x_continuous(breaks = year_breaks) +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) + 
+        labs(title = paste(this_reg,
+                           this_priority,
+                           this_trt))
+      
+      fn5b <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
+                    'boxplot_', box_scales, '_surface.jpg')
+      ggsave(plot = p5b,
+             filename = file.path(plot_folder, fn5b),
+             width = 8, height = 6, units = 'in')
+      
       #second set, selected HUCs only, time series line
 
-      #plot 5: sampled line, HaCFL, timeseries
-      p5 <- ggplot(data = res_r_p_t_sample,
+      #plot 6: sampled line, HaCFL, timeseries
+      p6 <- ggplot(data = res_r_p_t_sample,
              mapping = aes(x=Year, y=HaCFL, color=TxIntensity)) +
         geom_jitter(shape = 1, height = 0, width = 0.3) +
         geom_line() +
@@ -227,15 +260,15 @@ for (r in seq_along(regions)){
                            this_trt,
                            "Selected HUCs"))
 
-      fn5 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
+      fn6 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
                     'line_freey_', 'HaCFL.jpg')
-      ggsave(plot = p5,
-             filename = file.path(sampled_folder, fn5),
+      ggsave(plot = p6,
+             filename = file.path(sampled_folder, fn6),
              width = 7, height = 7, units = 'in')
 
 
-      #plot 6: sampled line, expFlame, timeseries
-      p6 <- ggplot(data = res_r_p_t_sample,
+      #plot 7: sampled line, expFlame, timeseries
+      p7 <- ggplot(data = res_r_p_t_sample,
              mapping = aes(x=Year, y=expFlame, color=TxIntensity)) +
         geom_jitter(shape = 1, height = 0, width = 0.3) +
         geom_line() +
@@ -247,15 +280,15 @@ for (r in seq_along(regions)){
                            this_trt,
                            "Selected HUCs"))
 
-      fn6 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
+      fn7 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
                     'line_freey_', 'expFlame.jpg')
-      ggsave(plot = p6,
-             filename = file.path(sampled_folder, fn6),
+      ggsave(plot = p7,
+             filename = file.path(sampled_folder, fn7),
              width = 7, height = 7, units = 'in')
 
 
-      #plot 7: sampled line, HaCBP, timeseries
-      p7 <- ggplot(data = res_r_p_t_sample,
+      #plot 8: sampled line, HaCBP, timeseries
+      p8 <- ggplot(data = res_r_p_t_sample,
              mapping = aes(x=Year, y=HaCBP, color=TxIntensity)) +
         geom_jitter(shape = 1, height = 0, width = 0.3) +
         geom_line() +
@@ -267,15 +300,15 @@ for (r in seq_along(regions)){
                            this_trt,
                            "Selected HUCs"))
 
-      fn7 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
+      fn8 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
                     'line_freey_', 'HaCBP.jpg')
-      ggsave(plot = p7,
-             filename = file.path(sampled_folder, fn7),
+      ggsave(plot = p8,
+             filename = file.path(sampled_folder, fn8),
              width = 7, height = 7, units = 'in')
 
 
-      #plot 8: sampled line, expBurn, timeseries
-      p8 <- ggplot(data = res_r_p_t_sample,
+      #plot 9: sampled line, expBurn, timeseries
+      p9 <- ggplot(data = res_r_p_t_sample,
              mapping = aes(x=Year, y=expBurn, color=TxIntensity)) +
         geom_jitter(shape = 1, height = 0, width = 0.3) +
         geom_line() +
@@ -287,11 +320,31 @@ for (r in seq_along(regions)){
                            this_trt,
                            "Selected HUCs"))
 
-      fn8 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
+      fn9 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
                     'line_freey_', 'expBurn.jpg')
-      ggsave(plot = p8,
-             filename = file.path(sampled_folder, fn8),
+      ggsave(plot = p9,
+             filename = file.path(sampled_folder, fn9),
              width = 7, height = 7, units = 'in')
+      
+      #plot 9: sampled line, expPcActive, timeseries
+      p10 <- ggplot(data = res_r_p_t_sample,
+                   mapping = aes(x=Year, y=expPcActive, color=TxIntensity)) +
+        geom_jitter(shape = 1, height = 0, width = 0.3) +
+        geom_line() +
+        scale_x_continuous(breaks = year_breaks) +
+        facet_wrap(~paste0(timing_group, " ", HUC12),
+                   ncol = 2, scales='free_y') +
+        labs(title = paste(this_reg,
+                           this_priority,
+                           this_trt,
+                           "Selected HUCs"))
+      
+      fn10 <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
+                    'line_freey_', 'expPcActive.jpg')
+      ggsave(plot = p10,
+             filename = file.path(sampled_folder, fn10),
+             width = 7, height = 7, units = 'in')
+      
       
       
     } # end t trt

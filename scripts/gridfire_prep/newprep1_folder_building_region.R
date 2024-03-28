@@ -31,7 +31,7 @@ regions <- c("SC", "NC", "CC", "SN")
 hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 hr <- hucs_shp %>% 
-  #get just the region names
+  #get just the region names. Note: Newer shp labeled reginNm if need to update
   select(RRK_Rgn) %>% 
   st_drop_geometry() %>% 
   distinct() %>% 
