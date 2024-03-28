@@ -20,7 +20,7 @@ output_folder <- file.path('plots', 'scatter')
 
 res <- read_csv(file.path('results',
                           'absolute',
-                          'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+                          'SC_absolute_expanded_NOFVS_20240319.csv')) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 #End year
@@ -36,21 +36,24 @@ res2039_500k <- res2039 %>%
   rename(expBurn_500k = expBurn, 
          expFlame_500k = expFlame,
          expAcf_500k = expPcActive,
-         hacbp_500k = HaCBP)
+         hacbp_500k = HaCBP,
+         hacfl_500k = HaCFL)
 
 res2039_1m <- res2039 %>% 
   filter(TxIntensity == "1m") %>% 
   rename(expBurn_1m = expBurn, 
          expFlame_1m = expFlame,
          expAcf_1m = expPcActive,
-         hacbp_1m = HaCBP)
+         hacbp_1m = HaCBP,
+         hacfl_1m = HaCFL)
 
 res2039_2m <- res2039 %>% 
   filter(TxIntensity == "2m") %>% 
   rename(expBurn_2m = expBurn, 
          expFlame_2m = expFlame,
          expAcf_2m = expPcActive,
-         hacbp_2m = HaCBP)
+         hacbp_2m = HaCBP,
+         hacfl_2m = HaCFL)
 
 res2039_jt <- res2039_500k %>% 
   left_join(res2039_1m, by = join_by(HUC12, Region, Priority, TxType)) %>% 
@@ -61,7 +64,8 @@ res2039_trim <- res2039_jt %>%
                 expBurn_500k, expBurn_1m, expBurn_2m,
                 expFlame_500k, expFlame_1m, expFlame_2m,
                 expAcf_500k, expAcf_1m, expAcf_2m,
-                hacbp_500k, hacbp_1m, hacbp_2m)
+                hacbp_500k, hacbp_1m, hacbp_2m,
+                hacfl_500k, hacfl_1m, hacfl_2m)
 
 res2039_trim
 
@@ -97,6 +101,7 @@ for (r in seq_along(regions)){
     
     #plots will facet by trt type
     
+    #expBurn
     plot_yr20_expBurn_p <- ggplot() + 
       geom_point(data=res_r_p, 
                  aes(x=expBurn_500k, y=expBurn_2m),
@@ -109,43 +114,72 @@ for (r in seq_along(regions)){
                   geom="smooth",
                   formula = 'y ~ x',
                   fullrange = TRUE) + 
-      labs(title=paste("Year 2039:", this_reg, this_priority), 
-           x="Baseline (500k Acres Treated)",
+      labs(title=paste("Year 2039 ExpBurn:", this_reg, this_priority), 
+           x="500k Acres Treated",
            y="2.3 Million Acres Treated") +
       facet_wrap(~TxType)
     #plot_yr20_expBurn_p
     
-    fn <- paste0("year2039_expBurn_500kvs2m_scatter_", 
+    fn_expburn <- paste0("year2039_expBurn_500kvs2m_scatter_", 
                  this_priority, 
                  ".jpg")
     
     ggsave(plot = plot_yr20_expBurn_p,
-           filename = fn,
+           filename = fn_expburn,
            path = plot_folder,
            width = 6, height = 3, units = "in")
     
-    # log scale
-    plot_yr20_expBurn_p_log <- ggplot() + 
+    #expFlame
+    plot_yr20_expFlame_p <- ggplot() + 
       geom_point(data=res_r_p, 
-                 aes(x=log10(expBurn_500k), y=log10(expBurn_2m)),
+                 aes(x=expFlame_500k, y=expFlame_2m),
                  shape=1, color="blue") +
       theme(aspect.ratio = 1) + 
       geom_abline(intercept=0, slope=1) + 
       stat_smooth(data=res_r_p,
-                  aes(x=log10(expBurn_500k), y=log10(expBurn_2m)),
+                  aes(x=expFlame_500k, y=expFlame_2m),
                   method=lm,
                   geom="smooth",
                   formula = 'y ~ x',
                   fullrange = TRUE) + 
+      labs(title=paste("Year 2039 ExpFlame:", this_reg, this_priority), 
+           x="500k Acres Treated",
+           y="2.3 Million Acres Treated") +
+      facet_wrap(~TxType)
+    #plot_yr20_expFlame_p
+    
+    fn_expFlame <- paste0("year2039_expFlame_500kvs2m_scatter_", 
+                 this_priority, 
+                 ".jpg")
+    
+    ggsave(plot = plot_yr20_expFlame_p,
+           filename = fn_expFlame,
+           path = plot_folder,
+           width = 6, height = 3, units = "in")
+    
+    
+    # log scale HaCFL
+    plot_yr20_hacfl_p_log <- ggplot() + 
+      geom_point(data=res_r_p, 
+                 aes(x=log10(hacfl_500k), y=log10(hacfl_2m)),
+                 shape=1, color="blue") +
+      theme(aspect.ratio = 1) + 
+      geom_abline(intercept=0, slope=1) + 
+      # stat_smooth(data=res_r_p,
+      #             aes(x=log10(hacfl_500k), y=log10(hacfl_2m)),
+      #             method=lm,
+      #             geom="smooth",
+      #             formula = 'y ~ x',
+      #             fullrange = TRUE) + 
       labs(title=paste("Year 2039:", this_reg, this_priority)) +
       facet_wrap(~TxType)
 
-    fn_log <- paste0("year2039_expBurn_500kvs2m_scatter_", 
+    fn_hacfl_log <- paste0("year2039_hacfl_500kvs2m_scatter_", 
                  this_priority, "_log10",
                  ".jpg")
     
-    ggsave(plot = plot_yr20_expBurn_p_log,
-           filename = fn_log,
+    ggsave(plot = plot_yr20_hacfl_p_log,
+           filename = fn_hacfl_log,
            path = plot_folder,
            width = 6, height = 3, units = "in")
     
@@ -156,6 +190,12 @@ for (r in seq_along(regions)){
                  shape=1, color="blue") +
       theme(aspect.ratio = 1) + 
       geom_abline(intercept=0, slope=1) + 
+      # stat_smooth(data=res_r_p,
+      #             aes(x=log10(hacbp_500k), y=log10(hacbp_2m)),
+      #             method=lm,
+      #             geom="smooth",
+      #             formula = 'y ~ x',
+      #             fullrange = TRUE) + 
       labs(title=paste("Year 2039:", this_reg, this_priority)) +
       facet_wrap(~TxType)
 
@@ -165,6 +205,56 @@ for (r in seq_along(regions)){
     
     ggsave(plot = plot_yr20_hacbp_p_log,
            filename = fn_hacbp_log,
+           path = plot_folder,
+           width = 6, height = 3, units = "in")
+    
+    # HaCFL
+    plot_yr20_hacfl_p <- ggplot() + 
+      geom_point(data=res_r_p, 
+                 aes(x=hacfl_500k, y=hacfl_2m),
+                 shape=1, color="blue") +
+      theme(aspect.ratio = 1) + 
+      geom_abline(intercept=0, slope=1) + 
+      # stat_smooth(data=res_r_p,
+      #             aes(x=hacfl_500k, y=hacfl_2m),
+      #             method=lm,
+      #             geom="smooth",
+      #             formula = 'y ~ x',
+      #             fullrange = TRUE) + 
+      labs(title=paste("Year 2039:", this_reg, this_priority)) +
+      facet_wrap(~TxType)
+    
+    fn_hacfl <- paste0("year2039_hacfl_500kvs2m_scatter_", 
+                           this_priority, 
+                           ".jpg")
+    
+    ggsave(plot = plot_yr20_hacfl_p,
+           filename = fn_hacfl,
+           path = plot_folder,
+           width = 6, height = 3, units = "in")
+    
+    # HaCBP
+    plot_yr20_hacbp_p <- ggplot() + 
+      geom_point(data=res_r_p, 
+                 aes(x=hacbp_500k, y=hacbp_2m),
+                 shape=1, color="blue") +
+      theme(aspect.ratio = 1) + 
+      geom_abline(intercept=0, slope=1) + 
+      # stat_smooth(data=res_r_p,
+      #             aes(x=hacbp_500k, y=hacbp_2m),
+      #             method=lm,
+      #             geom="smooth",
+      #             formula = 'y ~ x',
+      #             fullrange = TRUE) + 
+      labs(title=paste("Year 2039:", this_reg, this_priority)) +
+      facet_wrap(~TxType)
+    
+    fn_hacbp <- paste0("year2039_hacbp_500kvs2m_scatter_", 
+                           this_priority, 
+                           ".jpg")
+    
+    ggsave(plot = plot_yr20_hacbp_p,
+           filename = fn_hacbp,
            path = plot_folder,
            width = 6, height = 3, units = "in")
     
