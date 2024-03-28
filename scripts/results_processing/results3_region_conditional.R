@@ -9,7 +9,7 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SC"
+reg_code <- "CC"
 
 input_folder <- file.path('results', 'extracts')
 # file.path('run_202401_badblend', 'results_raw_extraction_test') 
@@ -26,13 +26,18 @@ hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
 #hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
 
 #Anna's FVS results
-fvs <- read_csv(file.path('data',
+fvs_orig <- read_csv(file.path('data',
                           'data_fvs',
-                          'FVSprocessedOutputsHucsScCcSn.csv')) %>%
+                          'FVSprocessedOutputsHucsScCcSn.csv'))
+fvs <- fvs_orig %>% 
   mutate(huc12 = as.character(huc12)) %>% 
   rename(Region = region,
          HUC12 = huc12,
-         TxIntensity = Intensity)
+         TxIntensity = Intensity) %>% 
+  #do not need these duplicated/will be duplicated fields
+  dplyr::select(-c(regionName,hucAc,
+                   wuiGroup,fireGroup,hybridGroup,
+                   timeWui,timeFire,timeHybrid))
 
 
 ### SQL extraction, every fire results -------------------------
@@ -133,6 +138,13 @@ res <- combined
 
 ### Add FVS -------------------------------------------------------------------
 
+#FVS has Hybrid labeled as Hybrid (not older RFFC)
+#rename Priority RFFC to Hybrid
+res <- res %>%
+  #change name to Hybrid
+  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
+
+
 #join FVS results with fire results
 res_all <- fvs %>% 
   inner_join(res,
@@ -140,13 +152,15 @@ res_all <- fvs %>%
 nrow(res_all) # confirm still 306,396
 
 
-### Rename RFFC, Add in area and percentile groups ----------------------------
+# missing <- res %>% 
+#   dplyr::select(HUC12, Region, Priority, TxIntensity, TxType, run, Year) %>% 
+#   left_join(res_all, 
+#             by = c("HUC12", "Region", "Priority", "TxIntensity", "TxType", "Year")) %>% 
+#   mutate(missing = ifelse(is.na(run.y), TRUE, FALSE)) %>% 
+#   filter(missing)
 
-#rename Priority RFFC to Hybrid
-res_all <- res_all %>%
-  #change name to Hybrid
-  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
 
+### Add in area and timing groups ----------------------------
 
 # TxBpPrct == for fire priority
 # TxRffcP == for RFFC (aka hybrid) priority
@@ -155,11 +169,22 @@ res_all <- res_all %>%
   left_join(hucs_shp %>%
               st_drop_geometry() %>%
               select(huc12,  hucAc,
-                     TxBpPrc, TxRffcP, TxWPrct,
-                     timeFire, timeHybrid, timeWUI) %>%
-              rename(fireGroup = TxBpPrc,
-                     hybridGroup = TxRffcP,
-                     wuiGroup = TxWPrct),
+                     fireGrp, hybrdGr, wuiGrop,
+                     timeFir, tmHybrd, timeWui) %>%
+              rename(fireGroup = fireGrp,
+                     hybridGroup = hybrdGr,
+                     wuiGroup = wuiGrop,
+                     timeFire = timeFir,
+                     timeHybrid = tmHybrd) %>% 
+              #better sorting with yr_epoch format
+              mutate(across(c(timeFire, timeHybrid, timeWui),
+                          ~ case_when(
+                            . == "yr1to5" ~ paste0("2024_", .),
+                            . == "yr6to10" ~ paste0("2029_", .),
+                            . == "yr11to15" ~ paste0("2034_", .),
+                            . == "yr16to20" ~ paste0("2039_", .),
+                            . == "yr1to5_16to20" ~ paste0("2024_2039_", .),
+                            . == "notTreated" ~ "Not treated"))),
             by = join_by("HUC12" == "huc12"))
 
 
@@ -169,7 +194,7 @@ res_all <- res_all %>%
          Priority, TxIntensity, TxType,
          run, Year, mas_scenario, 
          hucAc,
-         timeFire, timeHybrid, timeWUI,
+         timeFire, timeHybrid, timeWui,
          fireGroup, hybridGroup, wuiGroup,
          everything())
 

@@ -12,8 +12,8 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "CC"
-reg_file <- paste0(reg_code, '_conditional_NOFVS_20240319.csv')
+reg_code <- "SC"
+reg_file <- paste0(reg_code, '_conditional_20240328.csv')
 
 input_folder <- file.path('results', 'conditional')
 
@@ -44,9 +44,9 @@ cell_acres = 247.105381
 
 ### CRS prep -----------------------------------------------------
 
-crs(abp)
-st_crs(abp)
-st_crs(hucs_shp)
+#crs(abp)
+#st_crs(abp)
+#st_crs(hucs_shp)
 
 #hucs to the same crs as abp 
 hucs <- st_transform(hucs_shp, st_crs(abp))
@@ -72,8 +72,8 @@ hucs_abp <- sum_abp %>%
 head(hucs_abp)
 
 # write_csv(hucs_abp,
-#           file.path('results_csv',
-#                     'hucs_abp_20240205.csv'))
+#           file.path('results',
+#                     'hucs_abp_sc_20240328.csv'))
 
 
 ### baseline HaCBP, calc weights -------------------------------------------
@@ -128,7 +128,7 @@ res_adj <- res %>%
 ## Final adjustments ----------------------------------------------
 
 res_adj_trim <- res_adj %>% 
-  dplyr::select(-mas_scenario, 
+  dplyr::select(-run, 
                 -surface, -passive_crown, -active_crown,
                 -abp_sum, -cell_acres,
                 -exp_all_firetype)
