@@ -153,11 +153,22 @@ res_all <- res_all %>%
   left_join(hucs_shp %>%
               st_drop_geometry() %>%
               select(huc12,  hucAc,
-                     TxBpPrc, TxRffcP, TxWPrct,
-                     timeFire, timeHybrid, timeWUI) %>%
-              rename(fireGroup = TxBpPrc,
-                     hybridGroup = TxRffcP,
-                     wuiGroup = TxWPrct),
+                     fireGrp, hybrdGr, wuiGrop,
+                     timeFir, tmHybrd, timeWui) %>%
+              rename(fireGroup = fireGrp,
+                     hybridGroup = hybrdGr,
+                     wuiGroup = wuiGrop,
+                     timeFire = timeFir,
+                     timeHybrid = tmHybrd) %>% 
+              #better sorting with yr_epoch format
+              mutate(across(c(timeFire, timeHybrid, timeWui),
+                            ~ case_when(
+                              . == "yr1to5" ~ paste0("2024_", .),
+                              . == "yr6to10" ~ paste0("2029_", .),
+                              . == "yr11to15" ~ paste0("2034_", .),
+                              . == "yr16to20" ~ paste0("2039_", .),
+                              . == "yr1to5_16to20" ~ paste0("2024_2039_", .),
+                              . == "notTreated" ~ "Not treated"))),
             by = join_by("HUC12" == "huc12"))
 
 
@@ -167,7 +178,7 @@ res_all <- res_all %>%
          Priority, TxIntensity, TxType,
          run, Year, mas_scenario, 
          hucAc,
-         timeFire, timeHybrid, timeWUI,
+         timeFire, timeHybrid, timeWui,
          fireGroup, hybridGroup, wuiGroup,
          everything())
 

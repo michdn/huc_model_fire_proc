@@ -11,15 +11,18 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-input_folder <- file.path('results', 'absolute') 
+input_folder <- file.path("results", "absolute") 
 
-output_folder <- file.path('results')
+output_folder <- file.path("results", "datacube")
+dir.create(output_folder, recursive = TRUE) 
+
 
 #region results
-sc <- read_csv(file.path(input_folder, 'SC_absolute_TEST20240307.csv')) %>% 
+sc <- read_csv(file.path(input_folder, "SC_absolute_20240328.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-#cc
+cc <- read_csv(file.path(input_folder, "CC_absolute_20240328.csv")) %>% 
+mutate(HUC12 = as.character(HUC12))
 
 #nc
 
@@ -27,10 +30,10 @@ sc <- read_csv(file.path(input_folder, 'SC_absolute_TEST20240307.csv')) %>%
 
 ### Bind and save -------------------------------------------
 
-cube <- bind_rows(sc, cc, nc, sn)
+cube <- bind_rows(sc, cc) #, nc, sn)
 
 stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(cube,
           file.path(output_folder,
-                    paste0('datacube_', stamp, '.csv')))
+                    paste0('datacube_', "interim_sc_cc_", stamp, '.csv')))
