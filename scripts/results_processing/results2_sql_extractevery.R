@@ -128,22 +128,36 @@ all_cfl_fires <- do.call(bind_rows, cfl_collect)
 all_cft_hist <- do.call(bind_rows, cft_hist_collect)
 all_cfl_hist <- do.call(bind_rows, cfl_hist_collect)
 
-#save out collected data
-write_csv(all_cbp_fires,
-          file.path(output_folder,
-                    paste0(reg_group, '_cbp_all_fires_from_sql.csv')))
-write_csv(all_cfl_fires,
-          file.path(output_folder,
-                    paste0(reg_group, '_cfl_all_fires_from_sql.csv')))
+# #save out collected data
+# write_csv(all_cbp_fires,
+#           file.path(output_folder,
+#                     paste0(reg_group, '_cbp_all_fires_from_sql.csv')))
+# write_csv(all_cfl_fires,
+#           file.path(output_folder,
+#                     paste0(reg_group, '_cfl_all_fires_from_sql.csv')))
+# 
+# 
+# write_csv(all_cft_hist,
+#           file.path(output_folder,
+#                     paste0(reg_group,'_cft_hist_from_sql.csv')))
+# write_csv(all_cfl_hist,
+#           file.path(output_folder,
+#                     paste0(reg_group,'_cfl_hist_from_sql.csv')))
 
 
-write_csv(all_cft_hist,
+#as RDS too
+saveRDS(all_cbp_fires,
+        file.path(output_folder,
+                 paste0(reg_group, '_cbp_all_fires_from_sql.RDS')))
+saveRDS(all_cfl_fires,
           file.path(output_folder,
-                    paste0(reg_group,'_cft_hist_from_sql.csv')))
-write_csv(all_cfl_hist,
+                    paste0(reg_group, '_cfl_all_fires_from_sql.RDS')))
+saveRDS(all_cft_hist,
           file.path(output_folder,
-                    paste0(reg_group,'_cfl_hist_from_sql.csv')))
-
+                    paste0(reg_group,'_cft_hist_from_sql.RDS')))
+saveRDS(all_cfl_hist,
+          file.path(output_folder,
+                    paste0(reg_group,'_cfl_hist_from_sql.RDS')))
 
 #end times
 (time_end <- Sys.time())
