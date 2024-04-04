@@ -9,7 +9,7 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "CC"
+reg_code <- "SN"
 
 input_folder <- file.path('results', 'extracts')
 # file.path('run_202401_badblend', 'results_raw_extraction_test') 
@@ -42,17 +42,25 @@ fvs <- fvs_orig %>%
 
 ### SQL extraction, every fire results -------------------------
 
-cbp <- read_csv(file.path(input_folder, 
-                          paste0(reg_code, '_cbp_all_fires_from_sql.csv'))) %>% 
-  mutate(HUC12 = as.character(HUC12))
-cfl <- read_csv(file.path(input_folder, 
-                          paste0(reg_code, '_cfl_all_fires_from_sql.csv'))) %>% 
-  mutate(HUC12 = as.character(HUC12))
+cbp <- readRDS(file.path(input_folder, 
+                          paste0(reg_code, '_cbp_all_fires_from_sql.RDS'))) 
+cfl <- readRDS(file.path(input_folder, 
+                          paste0(reg_code, '_cfl_all_fires_from_sql.RDS'))) 
 
-cft_hist <- read_csv(file.path(input_folder, 
-                               paste0(reg_code, '_cft_hist_from_sql.csv'))) %>% 
-  mutate(HUC12 = as.character(HUC12))
-#cfl_hist <- read_csv(file.path(input_folder, paste0(reg_code, '_cfl_hist_from_sql.csv')))
+cft_hist <- readRDS(file.path(input_folder, 
+                               paste0(reg_code, '_cft_hist_from_sql.RDS')))
+
+# cbp <- read_csv(file.path(input_folder, 
+#                           paste0(reg_code, '_cbp_all_fires_from_sql.csv'))) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+# cfl <- read_csv(file.path(input_folder, 
+#                           paste0(reg_code, '_cfl_all_fires_from_sql.csv'))) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+# 
+# cft_hist <- read_csv(file.path(input_folder, 
+#                                paste0(reg_code, '_cft_hist_from_sql.csv'))) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+##cfl_hist <- read_csv(file.path(input_folder, paste0(reg_code, '_cfl_hist_from_sql.csv')))
 
 
 ### Summarize and combine --------------------------------------------------
@@ -147,7 +155,8 @@ res <- res %>%
 
 #join FVS results with fire results
 res_all <- fvs %>% 
-  inner_join(res,
+  inner_join(res %>% 
+               mutate(Year = as.numeric(Year)),
              by = c("HUC12", "Region", "Priority", "TxIntensity", "TxType", "run", "Year"))
 nrow(res_all) # confirm still 306,396
 

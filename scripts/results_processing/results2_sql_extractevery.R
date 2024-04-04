@@ -2,7 +2,7 @@
 # found to be faster to extract everything from sqlite
 #  and then later process, than trying to do sql queries in main pull
 
-#script '1' no longer needed, as it was the copy off of pyregence script
+#script "1" no longer needed, as it was the copy off of pyregence script
 # This script can run on bluejay reading from the share
 
 ### Libraries -------------------------------------------------
@@ -13,8 +13,8 @@ pacman::p_load(
   DBI)
 
 #local function
-#matching Anna's field names
-# NOTE! str_split only works as expected b/c it's inside a function here
+#matching Anna"s field names
+# NOTE! str_split only works as expected b/c it"s inside a function here
 # otherwise use tidyr::separate or str_split %>% map_chr(., n)
 split_rename_run <- function(df){
   df %>% 
@@ -34,19 +34,19 @@ split_rename_run <- function(df){
 
 # where to find the sql output files
 # NC, SC, SN, CC
-reg_group <- 'SC' 
-results_folder <- file.path('R:', 
-                            'rem',
-                            'MAS_gridfire_outputs',
+reg_group <- "SN" 
+results_folder <- file.path("R:", 
+                            "rem",
+                            "MAS_gridfire_outputs",
                             reg_group)
-#file.path('run_202401_badblend', 'results', reg_group) 
-# file.path('results', 'raw_sqlite', reg_group) 
+#file.path("run_202401_badblend", "results", reg_group) 
+# file.path("results", "raw_sqlite", reg_group) 
 
 # where to write csv summary files
-output_folder <- file.path('results', 'extracts')
+output_folder <- file.path("results", "extracts")
 
-# file.path('run_202401_badblend', 'results_raw_extraction_test') 
-#  #file.path('results', 'csv_extraction')
+# file.path("run_202401_badblend", "results_raw_extraction_test") 
+#  #file.path("results", "csv_extraction")
 
 dir.create(output_folder, recursive = TRUE) 
 
@@ -122,45 +122,65 @@ for (i in seq_along(sql_files)){
   
 }
 
+
+# Running out of memory, doing one at a time. 
+
+#CBP
 #row bind list items together, respectively
 all_cbp_fires <- do.call(bind_rows, cbp_collect)
-all_cfl_fires <- do.call(bind_rows, cfl_collect)
-all_cft_hist <- do.call(bind_rows, cft_hist_collect)
-all_cfl_hist <- do.call(bind_rows, cfl_hist_collect)
-
-# #save out collected data
-# write_csv(all_cbp_fires,
-#           file.path(output_folder,
-#                     paste0(reg_group, '_cbp_all_fires_from_sql.csv')))
-# write_csv(all_cfl_fires,
-#           file.path(output_folder,
-#                     paste0(reg_group, '_cfl_all_fires_from_sql.csv')))
-# 
-# 
-# write_csv(all_cft_hist,
-#           file.path(output_folder,
-#                     paste0(reg_group,'_cft_hist_from_sql.csv')))
-# write_csv(all_cfl_hist,
-#           file.path(output_folder,
-#                     paste0(reg_group,'_cfl_hist_from_sql.csv')))
-
-
+#save out collected data
+write_csv(all_cbp_fires,
+          file.path(output_folder,
+                    paste0(reg_group, "_cbp_all_fires_from_sql.csv")))
 #as RDS too
 saveRDS(all_cbp_fires,
         file.path(output_folder,
-                 paste0(reg_group, '_cbp_all_fires_from_sql.RDS')))
+                  paste0(reg_group, "_cbp_all_fires_from_sql.RDS")))
+#delete
+rm(all_cbp_fires)
+rm(cbp_collect)
+gc()
+
+
+#CFL
+all_cfl_fires <- do.call(bind_rows, cfl_collect)
+write_csv(all_cfl_fires,
+          file.path(output_folder,
+                    paste0(reg_group, "_cfl_all_fires_from_sql.csv")))
 saveRDS(all_cfl_fires,
+        file.path(output_folder,
+                  paste0(reg_group, "_cfl_all_fires_from_sql.RDS")))
+rm(all_cfl_fires)
+rm(cfl_collect)
+gc()
+
+#CFT HIST
+all_cft_hist <- do.call(bind_rows, cft_hist_collect)
+write_csv(all_cft_hist,
           file.path(output_folder,
-                    paste0(reg_group, '_cfl_all_fires_from_sql.RDS')))
+                    paste0(reg_group,"_cft_hist_from_sql.csv")))
 saveRDS(all_cft_hist,
+        file.path(output_folder,
+                  paste0(reg_group,"_cft_hist_from_sql.RDS")))
+rm(all_cft_hist)
+rm(cft_hist_collect)
+gc()
+
+#CFL HIST
+all_cfl_hist <- do.call(bind_rows, cfl_hist_collect)
+write_csv(all_cfl_hist,
           file.path(output_folder,
-                    paste0(reg_group,'_cft_hist_from_sql.RDS')))
+                    paste0(reg_group,"_cfl_hist_from_sql.csv")))
 saveRDS(all_cfl_hist,
           file.path(output_folder,
-                    paste0(reg_group,'_cfl_hist_from_sql.RDS')))
+                    paste0(reg_group,"_cfl_hist_from_sql.RDS")))
 
 #end times
 (time_end <- Sys.time())
 (time_elapsed <- time_end - time_start)
 
-  
+
+# saveRDS(cfl_hist_collect,
+#         file.path(output_folder,
+#                   paste0(reg_group,"_cfl_hist_collect.RDS")))
+

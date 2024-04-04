@@ -12,8 +12,8 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SC"
-reg_file <- paste0(reg_code, '_conditional_20240328.csv')
+reg_code <- "SN"
+reg_file <- paste0(reg_code, '_conditional_20240403.csv')
 
 input_folder <- file.path('results', 'conditional')
 
@@ -73,7 +73,7 @@ head(hucs_abp)
 
 # write_csv(hucs_abp,
 #           file.path('results',
-#                     'hucs_abp_sc_20240328.csv'))
+#                     'hucs_abp_sn_20240403.csv'))
 
 
 ### baseline HaCBP, calc weights -------------------------------------------
