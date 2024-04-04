@@ -16,15 +16,21 @@ output_folder <- file.path('plots', 'scatter', 'regions2_sc_cc')
 dir.create(output_folder, recursive = TRUE)
 
 
-res_sc <- read_csv(file.path("results", "absolute",
-                             "SC_absolute_expanded_NOFVS_20240319.csv")) %>% 
+# res_sc <- read_csv(file.path("results", "absolute",
+#                              "SC_absolute_expanded_NOFVS_20240319.csv")) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+# 
+# res_cc <- read_csv(file.path("results", "absolute",
+#                              "CC_absolute_expanded_NOFVS_20240319.csv")) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+# 
+# res <- bind_rows(res_sc, res_cc)
+
+res <- read_csv(file.path("results",
+                          "datacube", 
+                          "datacube_interim_sc_cc_20240328.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-res_cc <- read_csv(file.path("results", "absolute",
-                             "CC_absolute_expanded_NOFVS_20240319.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
-
-res <- bind_rows(res_sc, res_cc)
 
 #End year
 res2039 <- res %>% 
@@ -446,3 +452,22 @@ ggsave(plot = plot_yr2039_hacfl_reg,
        filename = "yr2039_hacfl_500vs2_scatter_region.jpg",
        path = output_folder,
        width = 6, height = 7, units = "in")
+
+
+### Extra: cond vs abs ------------------------------------------------------
+
+ggplot() + 
+  geom_point(data=res2039, 
+             aes(x=HaCBP, y=expBurn),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  labs(title="Year 2039: HaCBP & ExpBurn")
+
+ggplot() + 
+  geom_point(data=res2039, 
+             aes(x=HaCFL, y=expFlame),
+             shape=1, color="blue") +
+  theme(aspect.ratio = 1) + 
+  geom_abline(intercept=0, slope=1) + 
+  labs(title="Year 2039: HaCFL & ExpFlame")

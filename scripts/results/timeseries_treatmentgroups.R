@@ -22,9 +22,9 @@ box_scales <- "fixed" #"fixed" #free_y
 
 # can change between region-only and full datacube. 
 # will overwrite
-res_orig <- read_csv(file.path('results',
-                               'absolute',
-                               'SC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+res_orig <- read_csv(file.path("results",
+                               "datacube", 
+                               "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------
@@ -45,28 +45,28 @@ res <- res_orig %>%
 
 #post 2024-03-20, new fields in cube: timeFire, timeHybrid, timeWUI
 #relabeling groups
-res <- res %>%
-  mutate(fireGrpLbl = case_when(
-    fireGroup == 25 ~ "2024 (25)",
-    fireGroup == 50 ~ "2029 (50)",
-    fireGroup == 75 ~ "2034 (75)",
-    fireGroup == 100 ~ "2039 (100)",
-    .default = as.character(fireGroup)
-  )) %>%
-  mutate(wuiGrpLbl = case_when(
-    wuiGroup == 25 ~ "2024_2039 (25)",
-    wuiGroup == 50 ~ "2029 (50)",
-    wuiGroup == 75 ~ "2034 (75)",
-    wuiGroup == 100 ~ "not treated",
-    .default = as.character(wuiGroup)
-  )) %>%
-  mutate(hybridGrpLbl = case_when(
-    hybridGroup == 25 ~ "2024 (25)",
-    hybridGroup == 50 ~ "2029 (50)",
-    hybridGroup == 75 ~ "2034 (75)",
-    hybridGroup == 100 ~ "2039 (100)",
-    .default = as.character(hybridGroup)
-  ))
+# res <- res %>%
+#   mutate(fireGrpLbl = case_when(
+#     fireGroup == 25 ~ "2024 (25)",
+#     fireGroup == 50 ~ "2029 (50)",
+#     fireGroup == 75 ~ "2034 (75)",
+#     fireGroup == 100 ~ "2039 (100)",
+#     .default = as.character(fireGroup)
+#   )) %>%
+#   mutate(wuiGrpLbl = case_when(
+#     wuiGroup == 25 ~ "2024_2039 (25)",
+#     wuiGroup == 50 ~ "2029 (50)",
+#     wuiGroup == 75 ~ "2034 (75)",
+#     wuiGroup == 100 ~ "not treated",
+#     .default = as.character(wuiGroup)
+#   )) %>%
+#   mutate(hybridGrpLbl = case_when(
+#     hybridGroup == 25 ~ "2024 (25)",
+#     hybridGroup == 50 ~ "2029 (50)",
+#     hybridGroup == 75 ~ "2034 (75)",
+#     hybridGroup == 100 ~ "2039 (100)",
+#     .default = as.character(hybridGroup)
+#   ))
   
 year_breaks <- c(2024, 2029, 2034, 2039)
 
@@ -110,13 +110,13 @@ for (r in seq_along(regions)){
     # set as a known field name (to avoid passing field name as variable)
     if (this_priority == "Fire"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = fireGrpLbl) #timeFire
+        mutate(timing_group = timeFire) #timeFire fireGrpLbl
     } else if (this_priority == "WUI"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = wuiGrpLbl) #timeWUI
+        mutate(timing_group = timeWui) #timeWui wuiGrpLbl
     } else if (this_priority == "Hybrid"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = hybridGrpLbl) #timeHybrid
+        mutate(timing_group = timeHybrid) #timeHybrid hybridGrpLbl
     } else {
       stop("Unmatched priority timing group")
     }

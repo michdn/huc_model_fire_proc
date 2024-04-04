@@ -8,10 +8,14 @@ pacman::p_load(
 
 ### Base Data import -------------------------------------------
 
-res_orig <- read_csv(file.path('results',
-                          'absolute',
-                          'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
-  mutate(HUC12 = as.character(HUC12))
+# res_orig <- read_csv(file.path('results',
+#                           'absolute',
+#                           'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+
+res_orig <- read_csv(file.path("results",
+                          "datacube", 
+                          "datacube_interim_sc_cc_sn_20240403.csv"))
 
 
 ### Data set up ------------------------------------------------
@@ -27,29 +31,29 @@ res <- res_orig %>%
          #Make factor with set order (intensity))
          TxIntensity = as.factor(TxIntensity),
          TxIntensity = forcats::fct_relevel(TxIntensity,
-                                            "500k", "1m", "2m")) %>% 
-  #make clear labels
-  mutate(fireGrpLbl = case_when(
-    fireGroup == 25 ~ "2024 (25)",
-    fireGroup == 50 ~ "2029 (50)",
-    fireGroup == 75 ~ "2034 (75)",
-    fireGroup == 100 ~ "2039 (100)",
-    .default = as.character(fireGroup)
-  )) %>% 
-  mutate(wuiGrpLbl = case_when(
-    wuiGroup == 25 ~ "2024_2039 (25)",
-    wuiGroup == 50 ~ "2029 (50)",
-    wuiGroup == 75 ~ "2034 (75)",
-    wuiGroup == 100 ~ "not treated",
-    .default = as.character(wuiGroup)
-  )) %>% 
-  mutate(hybridGrpLbl = case_when(
-    hybridGroup == 25 ~ "2024 (25)",
-    hybridGroup == 50 ~ "2029 (50)",
-    hybridGroup == 75 ~ "2034 (75)",
-    hybridGroup == 100 ~ "2039 (100)",
-    .default = as.character(hybridGroup)
-  ))
+                                            "500k", "1m", "2m")) 
+  # #make clear labels
+  # mutate(fireGrpLbl = case_when(
+  #   fireGroup == 25 ~ "2024 (25)",
+  #   fireGroup == 50 ~ "2029 (50)",
+  #   fireGroup == 75 ~ "2034 (75)",
+  #   fireGroup == 100 ~ "2039 (100)",
+  #   .default = as.character(fireGroup)
+  # )) %>% 
+  # mutate(wuiGrpLbl = case_when(
+  #   wuiGroup == 25 ~ "2024_2039 (25)",
+  #   wuiGroup == 50 ~ "2029 (50)",
+  #   wuiGroup == 75 ~ "2034 (75)",
+  #   wuiGroup == 100 ~ "not treated",
+  #   .default = as.character(wuiGroup)
+  # )) %>% 
+  # mutate(hybridGrpLbl = case_when(
+  #   hybridGroup == 25 ~ "2024 (25)",
+  #   hybridGroup == 50 ~ "2029 (50)",
+  #   hybridGroup == 75 ~ "2034 (75)",
+  #   hybridGroup == 100 ~ "2039 (100)",
+  #   .default = as.character(hybridGroup)
+  # ))
 
 #NOTE: Versions past 2024-03-20 have timeFire, timeHybrid, timeWUI
 # use these for EXTERNAL, but can use above (since already written) for internal
@@ -89,13 +93,13 @@ for (r in seq_along(regions)){
     # set as a known field name (to avoid passing field name as variable)
     if (this_priority == "Fire"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = fireGrpLbl)
+        mutate(timing_group = timeFire) #timeFire fireGrpLbl
     } else if (this_priority == "WUI"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = wuiGrpLbl)
+        mutate(timing_group = timeWui) #timeWui wuiGrpLbl
     } else if (this_priority == "Hybrid"){
       res_r_p <- res_r_p %>% 
-        mutate(timing_group = hybridGrpLbl)
+        mutate(timing_group = timeHybrid) #timeHybrid hybridGrpLbl
     } else {
       stop("Unmatched priority timing group")
     }
