@@ -26,14 +26,18 @@ mutate(HUC12 = as.character(HUC12))
 
 #nc
 
-#sn
+sn <- read_csv(file.path(input_folder, "SN_absolute_20240403.csv")) %>% 
+  mutate(HUC12 = as.character(HUC12))
 
 ### Bind and save -------------------------------------------
 
-cube <- bind_rows(sc, cc) #, nc, sn)
+cube <- bind_rows(sc, cc, sn) #, nc) 
+
+cube <- cube %>% 
+  dplyr::select(-c(fireGroup, hybridGroup, wuiGroup))
 
 stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(cube,
           file.path(output_folder,
-                    paste0('datacube_', "interim_sc_cc_", stamp, '.csv')))
+                    paste0('datacube_', "interim_sc_cc_sn_", stamp, '.csv')))
