@@ -109,4 +109,3 @@ st_write(hucs_lowest,
          dsn="plots/data_spatial_maps/scenario_lowest_flame_20240325.gpkg",
          layer="scenario_lowest_flame",
          append=FALSE)
-

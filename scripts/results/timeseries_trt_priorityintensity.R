@@ -18,9 +18,9 @@ pacman::p_load(
 
 # can change between region-only and full datacube. 
 # will overwrite
-res_orig <- read_csv(file.path('results',
-                          'absolute',
-                          'CC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+res_orig <- read_csv(file.path("results",
+                               "datacube", 
+                               "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 ### Data set up ------------------------------------------------

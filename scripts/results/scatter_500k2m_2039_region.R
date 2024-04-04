@@ -18,9 +18,9 @@ output_folder <- file.path('plots', 'scatter')
 #dir.create(output_folder, recursive = TRUE) #create with region in loop
 
 
-res <- read_csv(file.path('results',
-                          'absolute',
-                          'SC_absolute_expanded_NOFVS_20240319.csv')) %>% 
+res <- read_csv(file.path("results",
+                               "datacube", 
+                               "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 #End year
