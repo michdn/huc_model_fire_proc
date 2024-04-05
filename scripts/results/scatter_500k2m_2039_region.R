@@ -21,7 +21,7 @@ output_folder <- file.path('plots', 'scatter')
 res <- read_csv(file.path("results",
                                "datacube", 
                                "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
+  mutate(HUC12 = as.character(HUC12)) 
 
 #End year
 res2039 <- res %>% 
@@ -257,6 +257,26 @@ for (r in seq_along(regions)){
            filename = fn_hacbp,
            path = plot_folder,
            width = 6, height = 3, units = "in")
+    
+    
+    # # HaCFL / HaCBP
+    # plot_yr20_hacflhacbp_p <- ggplot() + 
+    #   geom_point(data=res_r_p, 
+    #              aes(x=(hacfl_500k/hacbp_500k), y=(hacfl_2m/hacbp_2m)),
+    #              shape=1, color="blue") +
+    #   theme(aspect.ratio = 1) + 
+    #   geom_abline(intercept=0, slope=1) + 
+    #   labs(title=paste("Year 2039:", this_reg, this_priority)) +
+    #   facet_wrap(~TxType)
+    # 
+    # fn_hacflhacbp <- paste0("year2039_hacflhacbp_500kvs2m_scatter_", 
+    #                    this_priority, 
+    #                    ".jpg")
+    # 
+    # ggsave(plot = plot_yr20_hacflhacbp_p,
+    #        filename = fn_hacflhacbp,
+    #        path = plot_folder,
+    #        width = 6, height = 3, units = "in")
     
     
   } # end p priority

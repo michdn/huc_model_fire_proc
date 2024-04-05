@@ -15,7 +15,8 @@ pacman::p_load(
 
 res_orig <- read_csv(file.path("results",
                           "datacube", 
-                          "datacube_interim_sc_cc_sn_20240403.csv"))
+                          "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
+  mutate(HUC12 = as.character(HUC12)) 
 
 
 ### Data set up ------------------------------------------------
@@ -176,6 +177,26 @@ for (r in seq_along(regions)){
       
       ggsave(plot = hacbp_plot,
              filename = file.path(plot_folder, hacbp_file),
+             width = 5, height = 7, units = 'in')
+      
+      
+      #HaCFL/HaCBP
+      hacflhacbp_plot <- ggplot() +
+        geom_boxplot(data = res_r_p_y,
+                     mapping = aes(x=TxIntensity, y=HaCFL/HaCBP),
+                     outlier.color = 'black',
+                     outlier.shape = 16,
+                     outlier.size = 2,
+                     notch = TRUE) + 
+        facet_wrap(~TxType+timing_group) +
+        labs(title = plot_label,
+             x = "Treatment Intensity")
+      
+      hacflhacbp_file <- paste0(this_reg, '_', this_priority, '_', this_year, '_',
+                           'boxplot_hacbphacbp.jpg')
+      
+      ggsave(plot = hacflhacbp_plot,
+             filename = file.path(plot_folder, hacflhacbp_file),
              width = 5, height = 7, units = 'in')
       
       

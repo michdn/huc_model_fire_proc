@@ -160,6 +160,23 @@ for (r in seq_along(regions)){
       ggsave(plot = p1,
              filename = file.path(plot_folder, fn1),
              width = 8, height = 6, units = 'in')
+      
+      #plot 1b: boxplot all HUCs, HaCFL/HaCBP, timeseries
+      p1b <- ggplot() +
+        geom_boxplot(data = res_r_p_t,
+                     mapping = aes(x = Year, y = HaCFL/HaCBP, group=Year)) +
+        scale_x_continuous(breaks = year_breaks) +
+        facet_wrap(~TxIntensity+timing_group, scales = box_scales) +
+        labs(title = paste(this_reg,
+                           this_priority,
+                           this_trt))
+      
+      fn1b <- paste0(this_reg, '_', this_priority, '_', this_trt, '_',
+                    'boxplot_', box_scales, '_HaCFLHaCBP.jpg')
+      ggsave(plot = p1b,
+             filename = file.path(plot_folder, fn1b),
+             width = 8, height = 6, units = 'in')
+      
 
       #plot 2 : boxplot all HUCs, expFlame, timeseries
       p2 <- ggplot() +
@@ -266,6 +283,25 @@ for (r in seq_along(regions)){
              filename = file.path(sampled_folder, fn6),
              width = 7, height = 7, units = 'in')
 
+      #plot 6b: samples line, HaCFL/HaCBP, timeseries
+      p6b <- ggplot(data = res_r_p_t_sample,
+                   mapping = aes(x=Year, y=HaCFL/HaCBP, color=TxIntensity)) +
+        geom_jitter(shape = 1, height = 0, width = 0.3) +
+        geom_line() +
+        scale_x_continuous(breaks = year_breaks) +
+        facet_wrap(~paste0(timing_group, " ", HUC12),
+                   ncol = 2, scales='free_y') +
+        labs(title = paste(this_reg,
+                           this_priority,
+                           this_trt,
+                           "Selected HUCs"))
+      
+      fn6b <- paste0('sampled_', this_reg, '_', this_priority, '_', this_trt, '_',
+                    'line_freey_', 'HaCFLHaCBP.jpg')
+      ggsave(plot = p6b,
+             filename = file.path(sampled_folder, fn6b),
+             width = 7, height = 7, units = 'in')
+      
 
       #plot 7: sampled line, expFlame, timeseries
       p7 <- ggplot(data = res_r_p_t_sample,

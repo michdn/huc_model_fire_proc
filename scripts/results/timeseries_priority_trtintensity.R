@@ -21,7 +21,7 @@ pacman::p_load(
 res_orig <- read_csv(file.path("results",
                                "datacube", 
                                "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
+  mutate(HUC12 = as.character(HUC12)) 
 
 ### Data set up ------------------------------------------------
 
@@ -75,11 +75,14 @@ for (r in seq_along(regions)){
     
     res_r_p_mean <- res_r_p %>% 
       group_by(Year, TxIntensity, TxType) %>% 
+      mutate(hacflhacbp = HaCFL/HaCBP) %>% 
       summarize(ave_expBurn = mean(expBurn),
                 sum_expBurn = sum(expBurn),
                 ave_expFlame = mean(expFlame),
                 ave_expFlamehAc = mean(expFlame/hucAc),
-                ave_active = mean(expPcActive))
+                ave_active = mean(expPcActive),
+                #probably not correct
+                ave_hacflhacbp = mean(hacflhacbp))
     
 
       #plot 1: sum expBurn
@@ -156,6 +159,25 @@ for (r in seq_along(regions)){
              width = 6, height = 5, units = 'in')
       
       
+      #plot 4: average HaCFL/HaCBP
+      # I don't think this might make sense to do
+      p4 <- ggplot() +
+        geom_line(data = res_r_p_mean,
+                  mapping = aes(x=Year, y=ave_hacflhacbp,
+                                color=TxType, linetype=TxIntensity)) +
+        scale_x_continuous(breaks = year_breaks) +
+        scale_color_manual("Treatment Type", values = c('#1b9e77', '#d95f02', '#7570b3')) +
+        scale_linetype_manual("Intensity", values = c('solid', 'dashed', 'dotted')) +
+        labs(title = paste(this_reg,
+                           this_priority),
+             y = 'Mean of (HaCFL/HaCBP)')
+
+      fn4 <- paste0(this_reg, '_', this_priority, '_trtintensity_meanhacflhacbp.jpg')
+
+      ggsave(plot = p4,
+             filename = file.path(plot_folder, fn4),
+             width = 6, height = 5, units = 'in')
+
 
   } # end p priorities
   
