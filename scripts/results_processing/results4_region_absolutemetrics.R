@@ -129,7 +129,6 @@ res_adj <- res %>%
 
 res_adj_trim <- res_adj %>% 
   dplyr::select(-run, 
-                -surface, -passive_crown, -active_crown,
                 -abp_sum, -cell_acres,
                 -exp_all_firetype,
                 -fireGroup, -wuiGroup, -hybridGroup)
