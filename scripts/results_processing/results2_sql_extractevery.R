@@ -34,7 +34,7 @@ split_rename_run <- function(df){
 
 # where to find the sql output files
 # NC, SC, SN, CC
-reg_group <- "SN" 
+reg_group <- "SNbl" 
 results_folder <- file.path("R:", 
                             "rem",
                             "MAS_gridfire_outputs",

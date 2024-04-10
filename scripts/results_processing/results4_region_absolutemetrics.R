@@ -12,8 +12,8 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SN"
-reg_file <- paste0(reg_code, '_conditional_20240403.csv')
+reg_code <- "SC"
+reg_file <- paste0(reg_code, '_conditional_20240410.csv')
 
 input_folder <- file.path('results', 'conditional')
 
@@ -131,7 +131,8 @@ res_adj_trim <- res_adj %>%
   dplyr::select(-run, 
                 -abp_sum, -cell_acres,
                 -exp_all_firetype,
-                -fireGroup, -wuiGroup, -hybridGroup)
+                -fireGroup, -wuiGroup, -hybridGroup,
+                -hacfl_avesq)
 
 stamp <- format(Sys.time(), "%Y%m%d")
 

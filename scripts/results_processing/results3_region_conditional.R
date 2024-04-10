@@ -9,11 +9,9 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SN"
+reg_code <- "SNbl"
 
 input_folder <- file.path('results', 'extracts')
-# file.path('run_202401_badblend', 'results_raw_extraction_test') 
- #file.path('results', 'csv_extraction')
 
 output_folder <- file.path('results', 'conditional')
 dir.create(output_folder, recursive = TRUE) 
@@ -71,7 +69,9 @@ hacbp <- cbp %>%
 
 hacfl <- cfl %>% 
   group_by(HUC12, Region, Priority, TxIntensity, TxType, run, Year, mas_scenario) %>% 
-  summarize(HaCFL = mean(huc_avg_fl), .groups='drop')
+  summarize(HaCFL = mean(huc_avg_fl), 
+            hacfl_avesq = mean(huc_avg_fl^2),
+            .groups='drop')
 
 hacft_hist <- cft_hist %>% 
   group_by(HUC12, Region, Priority, TxIntensity, TxType, run, Year, mas_scenario, fire_type) %>% 
