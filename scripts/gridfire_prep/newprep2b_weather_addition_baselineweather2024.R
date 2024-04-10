@@ -9,28 +9,9 @@
 # This script will pull just the 2024 weather files, and 
 #  then duplicate them for 2029, 2034, and 2039. 
 
-# This is for the baseline-no-climate-change scenario. 
+# This is for the baseline-no-climate-change scenario (baseweather). 
 
 ### **********
-
-
-
-
-
-
-
-
-
-## WORK IN PROGRESS
-
-
-
-
-
-
-
-
-
 
 
 ### Libraries -------------------------------------------------
@@ -41,8 +22,7 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-#base_folder <- "hucs_gf_test_f4rf"
-base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf")
+base_folder <- file.path("E:", "MAS", "gridfire_prep", "baseweather")
 
 input_folder <- file.path("data", "data_weather")
 
@@ -52,7 +32,7 @@ yr_list <- c("2024", "2029", "2034", "2039")
 
 ### Data -----------------------------------------------------
 
-weather_files <- list.files(input_folder, 
+weather_all <- list.files(input_folder, 
                          full.names = TRUE,
                          recursive = TRUE,
                          pattern = "*.json$") 
@@ -61,34 +41,46 @@ weather_files <- list.files(input_folder,
 #  (this way, we can use the same input folder as normal)
 
 weather_2024 <- grep(pattern="_2024", 
-                     weather_files,
+                     weather_all,
                      value=TRUE)
+#2837, one for each HUC
   
 
-
 #for reference & crosswalk 
-hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
 
-hr <- hucs_shp %>% 
-  #get just the region names
-  select(RRK_Rgn) %>% 
+hr2 <- hucs_shp %>% 
   st_drop_geometry() %>% 
-  distinct() %>% 
-  arrange(RRK_Rgn) %>% 
-  #manually add code that is used in fuel file names
-  #alpha sorted Central Coast, North Coast, Sierra Nevada, South Coast
-  add_column(reg_code = c("CC", "NC", "SN", "SC")) %>% 
-  #join back to get all fields
-  left_join(hucs_shp, by = "RRK_Rgn") %>% 
-  #create crosswalk from reg_code to huc12s
-  select(RRK_Rgn, reg_code, huc12)
+  select(huc12, region) %>% 
+  rename(reg_code = region) %>% 
+  distinct() 
+
+
+# #for reference & crosswalk 
+# hucs_shp <- st_read("data/data_huc/TxPrctRankRrkWipRffc.shp")
+# 
+# hr <- hucs_shp %>% 
+#   #get just the region names
+#   select(RRK_Rgn) %>% 
+#   st_drop_geometry() %>% 
+#   distinct() %>% 
+#   arrange(RRK_Rgn) %>% 
+#   #manually add code that is used in fuel file names
+#   #alpha sorted Central Coast, North Coast, Sierra Nevada, South Coast
+#   add_column(reg_code = c("CC", "NC", "SN", "SC")) %>% 
+#   #join back to get all fields
+#   left_join(hucs_shp, by = "RRK_Rgn") %>% 
+#   #create crosswalk from reg_code to huc12s
+#   select(RRK_Rgn, reg_code, huc12)
 
 
 ### Loop for each file -------------------------------------
 
-for (i in seq_along(weather_files)){
+#for each 2024 weather file, duplicate out into each year
+
+for (i in seq_along(weather_2024)){
   
-  this_file <- weather_files[i]
+  this_file <- weather_2024[i]
 
   #file name string manipulation 
   this_file_name <- tools::file_path_sans_ext(basename(this_file))
@@ -100,7 +92,7 @@ for (i in seq_along(weather_files)){
   
   
   # get region
-  this_region <- hr %>% 
+  this_region <- hr2 %>% 
     filter(huc12 == this_huc) %>% 
     pull(reg_code)
   

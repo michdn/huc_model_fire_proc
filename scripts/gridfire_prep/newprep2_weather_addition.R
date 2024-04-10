@@ -13,8 +13,7 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-#base_folder <- "hucs_gf_test_f4rf"
-base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf")
+base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf_baseline")
 
 input_folder <- file.path("data", "data_weather")
 
