@@ -9,7 +9,13 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "CC"
+#whether or not to update the HUC area (hucAc) in HUCs with
+# the nonburnable/coastal issue. 
+# MAKE SURE TO ALIGN WITH RUN! 
+update_hucac_nb <- TRUE
+
+#region or folder name for variants/reruns
+reg_code <- "SNbl"
 
 input_folder <- file.path('results', 'extracts')
 # file.path('run_202401_badblend', 'results_raw_extraction_test') 
@@ -130,6 +136,13 @@ res <- combined
 
 ### Add FVS -------------------------------------------------------------------
 
+#FVS has Hybrid labeled as Hybrid (not older RFFC)
+#rename Priority RFFC to Hybrid
+res <- res %>%
+  #change name to Hybrid
+  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
+
+
 # #join FVS results with fire results
 # res_all <- fvs %>% 
 #   inner_join(res,
@@ -139,12 +152,6 @@ res <- combined
 res_all <- res
 
 ### Rename RFFC, Add in area and percentile groups ----------------------------
-
-#rename Priority RFFC to Hybrid
-res_all <- res_all %>%
-  #change name to Hybrid
-  mutate(Priority = ifelse(Priority == 'RFFC', 'Hybrid', Priority))
-
 
 # TxBpPrct == for fire priority
 # TxRffcP == for RFFC (aka hybrid) priority
@@ -170,6 +177,18 @@ res_all <- res_all %>%
                               . == "yr1to5_16to20" ~ paste0("2024_2039_", .),
                               . == "notTreated" ~ "Not treated"))),
             by = join_by("HUC12" == "huc12"))
+
+
+if (update_hucac_nb){
+  res_all <- res_all %>% 
+    left_join(nb_hucs %>% 
+                dplyr::select(huc12, hucAc) %>% 
+                rename(hucAc_new = hucAc),
+              by = join_by("HUC12" == "huc12")) %>% 
+    mutate(hucAc = if_else(!is.na(hucAc_new), hucAc_new, hucAc)) %>% 
+    #dplyr::select(HUC12, hucAc, hucAc_new, hucAc2) %>% View()
+    dplyr::select(-hucAc_new)
+}
 
 
 #reorder nicely

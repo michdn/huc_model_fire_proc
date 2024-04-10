@@ -9,6 +9,12 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
+#whether or not to update the HUC area (hucAc) in HUCs with
+# the nonburnable/coastal issue. 
+# MAKE SURE TO ALIGN WITH RUN! 
+update_hucac_nb <- TRUE
+
+#region or folder name for variants/reruns
 reg_code <- "SNbl"
 
 input_folder <- file.path('results', 'extracts')
@@ -37,6 +43,9 @@ fvs <- fvs_orig %>%
                    wuiGroup,fireGroup,hybridGroup,
                    timeWui,timeFire,timeHybrid))
 
+if (update_hucac_nb){
+  nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS")
+}
 
 ### SQL extraction, every fire results -------------------------
 
@@ -195,6 +204,18 @@ res_all <- res_all %>%
                             . == "yr1to5_16to20" ~ paste0("2024_2039_", .),
                             . == "notTreated" ~ "Not treated"))),
             by = join_by("HUC12" == "huc12"))
+
+
+if (update_hucac_nb){
+  res_all %>% 
+    left_join(nb_hucs %>% 
+                dplyr::select(huc12, hucAc) %>% 
+                rename(hucAc_new = hucAc),
+              by = join_by("HUC12" = "huc12")) %>% 
+    mutate(hucAc = if_else(!is.na(hucAc_new), hucAc_new, hucAc)) %>% 
+    dplyr::select()
+    #dplyr::select(-hucAc_new)
+}
 
 
 #reorder nicely

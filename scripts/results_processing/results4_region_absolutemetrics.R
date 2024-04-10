@@ -12,8 +12,8 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SC"
-reg_file <- paste0(reg_code, '_conditional_20240410.csv')
+reg_code <- "SNbl"
+reg_file <- paste0(reg_code, '_conditional_NOFVS_20240410.csv')
 
 input_folder <- file.path('results', 'conditional')
 

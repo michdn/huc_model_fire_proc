@@ -11,7 +11,7 @@
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse,
-  sf, #MUST include b/c of RDS object 
+  sf, #can remove now, nb hucs no longer a sf object
   fs) #for easier directory copy
 
 
