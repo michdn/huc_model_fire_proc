@@ -1,5 +1,7 @@
 # script to count pixels of nonburnable fuels in base FM40
 
+# Identifies >= 50% nonburnable HUCs, adds additional coastal HUC
+#  this is the ones that will be rerun/updated
 
 
 ## library ---------------------------------------------
@@ -161,6 +163,42 @@ nonburn50 <- allcount %>%
 
 nb50 <- nonburn50 %>% pull(huc12)
 #204
+
+
+## NONBURN 50%+ and the final coastal waters HUC
+# These will be the ones to rerun! 
+
+rerun <- allcount %>% 
+  filter(nonburn_perc >= 50 | coastal)
+
+#add region, HUC shp info. 
+rerun <- rerun %>% 
+  left_join(hucs_all %>% 
+              st_drop_geometry() %>% 
+              dplyr::select(huc12, hucAc, region),
+            by = join_by(huc12)) %>% 
+  rename(hucAc_orig = hucAc)
+
+rerun %>% 
+  group_by(region) %>% 
+  summarize(count = n())
+
+# add corrected area 
+# terra::cellSize(fm40ca, unit = "m") #900m
+# pixels are 30m x 30m (900m)
+# 9
+
+rerun <- rerun %>% 
+  mutate(count_ok = count_pixels - count_nonburn,
+         area_total_m = count_pixels * 900,
+         area_ok_m = count_ok * 900,
+         area_total_ac = area_total_m * 0.000247105,
+         hucAc = area_ok_m * 0.000247105,
+         area_tot_diff = hucAc_orig - hucAc)
+
+saveRDS(rerun, "qaqc/nonburnable_rerun_list.RDS")
+write_csv(rerun, "qaqc/nonburnable_rerun_list.csv")
+
 
 ## Check 50%+ club against non-zero fires ---------------------------
 
