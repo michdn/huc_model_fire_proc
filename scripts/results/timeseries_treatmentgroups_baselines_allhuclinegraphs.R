@@ -1,11 +1,27 @@
 # time series graphs
 
-# all HUCs: boxplots
-# sampled HUCs: line graphs
-
 # all regions, all scenarios
 # HaCBP, HaCFL
 # expBurn, expFlame, active
+
+# BASELINES: 
+#version where baselines masquerade as a treatment intensity inside every priority/trt
+
+
+# remove overall boxplots. 
+# use ggarrange, etc. to create line graphs for ALL HUCS. 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### Libraries -------------------------------------------------
@@ -33,7 +49,7 @@ res_orig <- read_csv(file.path("results",
 # Want intensity order: '500k', '1m', '2m'
 
 res <- res_orig %>% 
-  #For graphing in the correct order
+  #For graphing in the correct order (generic, used in multiple places, with modifications)
   # make factor with set order (priority)
   mutate(Priority = as.factor(Priority),
          Priority = forcats::fct_relevel(Priority,
@@ -41,7 +57,34 @@ res <- res_orig %>%
          #Make factor with set order (intensity))
          TxIntensity = as.factor(TxIntensity),
          TxIntensity = forcats::fct_relevel(TxIntensity,
-                                            "500k", "1m", "2m", "baseline", "baseweather"))
+                                            "baseweather", "baseline", "500k", "1m", "2m"),
+         #recode so it fits on graphs
+         TxIntensity = forcats::fct_recode(TxIntensity, "bw" = "baseweather"),
+         TxIntensity = forcats::fct_recode(TxIntensity, "base" = "baseline"))
+
+
+#baseline/baseweather to be treated as an 'intensity' level PER ALL priorities, trts
+res_bases <- res %>% 
+  filter(TxIntensity %in% c("base", "bw")) %>% 
+  #remove priorities, trts from bases
+  dplyr::select(-Priority, -TxType)
+
+#remove bases from rest of results (temporarily)
+res <- res %>% 
+  filter(!TxIntensity %in% c("base", "bw"))
+
+#get all combination of Priority and TxTypes
+frame <- res %>% 
+  dplyr::select(Priority, TxType) %>% 
+  distinct()
+
+#duplicate bases values for all priority-txtype combos
+res_bases <- frame %>% 
+  cross_join(res_bases) 
+
+#add back in
+res <- bind_rows(res, res_bases)
+
 
 #post 2024-03-20, new fields in cube: timeFire, timeHybrid, timeWUI
 #relabeling groups
@@ -117,9 +160,9 @@ for (r in seq_along(regions)){
     } else if (this_priority == "Hybrid"){
       res_r_p <- res_r_p %>% 
         mutate(timing_group = timeHybrid) #timeHybrid hybridGrpLbl
-    } else if (this_priority %in% c("baseline", "baseweather")){
-      res_r_p <- res_r_p %>% 
-        mutate(timing_group = "none")
+    # } else if (this_priority %in% c("baseline", "baseweather")){
+    #   res_r_p <- res_r_p %>% 
+    #     mutate(timing_group = "none")
     } else {
       stop("Unmatched priority timing group")
     }
@@ -162,7 +205,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_HaCFL.jpg')
       ggsave(plot = p1,
              filename = file.path(plot_folder, fn1),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
       
       #plot 1b: boxplot all HUCs, HaCFL/HaCBP, timeseries
       p1b <- ggplot() +
@@ -178,7 +221,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_HaCFLHaCBP.jpg')
       ggsave(plot = p1b,
              filename = file.path(plot_folder, fn1b),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
       
 
       #plot 2 : boxplot all HUCs, expFlame, timeseries
@@ -195,7 +238,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_expFlame.jpg')
       ggsave(plot = p2,
              filename = file.path(plot_folder, fn2),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
 
 
       #plot 3 : boxplot all HUCs, HaCBP, timeseries
@@ -212,7 +255,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_HaCBP.jpg')
       ggsave(plot = p3,
              filename = file.path(plot_folder, fn3),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
 
 
       #plot 4 : boxplot all HUCs, expBurn, timeseries
@@ -229,7 +272,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_expBurn.jpg')
       ggsave(plot = p4,
              filename = file.path(plot_folder, fn4),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
       
       
       #plot 5 : boxplot all HUCs, active crown, timeseries
@@ -246,7 +289,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_active.jpg')
       ggsave(plot = p5,
              filename = file.path(plot_folder, fn5),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
       
       
       #plot 5b : boxplot all HUCs, surface, timeseries
@@ -263,7 +306,7 @@ for (r in seq_along(regions)){
                     'boxplot_', box_scales, '_surface.jpg')
       ggsave(plot = p5b,
              filename = file.path(plot_folder, fn5b),
-             width = 8, height = 6, units = 'in')
+             width = 8, height = 8, units = 'in')
       
       #second set, selected HUCs only, time series line
 

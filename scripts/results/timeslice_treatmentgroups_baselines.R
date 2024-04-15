@@ -1,5 +1,7 @@
 # script to look at treatment groups by time SLICE
 
+# pulls out baseline (and baseweather?) and adds them as 'intensities' to each
+
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -22,7 +24,7 @@ res_orig <- read_csv(file.path("results",
 ### Data set up ------------------------------------------------
 
 res <- res_orig %>% 
-  #For graphing in the correct order
+  #For graphing in the correct order (generic, used in multiple places, with modifications)
   # make factor with set order (priority)
   mutate(Priority = as.factor(Priority),
          Priority = forcats::fct_relevel(Priority,
@@ -30,7 +32,11 @@ res <- res_orig %>%
          #Make factor with set order (intensity))
          TxIntensity = as.factor(TxIntensity),
          TxIntensity = forcats::fct_relevel(TxIntensity,
-                                            "500k", "1m", "2m", "baseline", "baseweather"))
+                                            "baseweather", "baseline", "500k", "1m", "2m"),
+         #recode so it fits on graphs
+         TxIntensity = forcats::fct_recode(TxIntensity, "bw" = "baseweather"),
+         TxIntensity = forcats::fct_recode(TxIntensity, "base" = "baseline"))
+
 # #make clear labels
   # mutate(fireGrpLbl = case_when(
   #   fireGroup == 25 ~ "2024 (25)",
@@ -57,6 +63,29 @@ res <- res_orig %>%
 #NOTE: Versions past 2024-03-20 have timeFire, timeHybrid, timeWUI
 # use these for EXTERNAL, but can use above (since already written) for internal
 
+#baseline/baseweather to be treated as an 'intensity' level PER ALL priorities, trts
+res_bases <- res %>% 
+  filter(TxIntensity %in% c("base", "bw")) %>% 
+  #remove priorities, trts from bases
+  dplyr::select(-Priority, -TxType)
+
+#remove bases from rest of results (temporarily)
+res <- res %>% 
+  filter(!TxIntensity %in% c("base", "bw"))
+
+#get all combination of Priority and TxTypes
+frame <- res %>% 
+  dplyr::select(Priority, TxType) %>% 
+  distinct()
+
+#duplicate bases values for all priority-txtype combos
+res_bases <- frame %>% 
+  cross_join(res_bases) 
+
+#add back in
+res <- bind_rows(res, res_bases)
+
+
 ### Looping version -----------------------------------------------
 
 regions <- res %>% pull(Region) %>% unique()
@@ -69,7 +98,6 @@ for (r in seq_along(regions)){
   res_r <- res %>% 
     filter(Region == this_reg)
   
-  
   #output 
   plot_folder <- file.path('plots', 'timeslices', this_reg)
 
@@ -79,6 +107,7 @@ for (r in seq_along(regions)){
   #priorities in this region (all same)
   priorities <- res_r %>% pull(Priority) %>% unique()
   
+
   #PRIORITY (first inner loop)
   # only going in this order (priority then year) b/c using shell of other script
   for (p in seq_along(priorities)){
@@ -99,9 +128,9 @@ for (r in seq_along(regions)){
     } else if (this_priority == "Hybrid"){
       res_r_p <- res_r_p %>% 
         mutate(timing_group = timeHybrid) #timeHybrid hybridGrpLbl
-    } else if (this_priority %in% c("baseline", "baseweather")){
-      res_r_p <- res_r_p %>% 
-        mutate(timing_group = "none")
+    # } else if (this_priority %in% c("baseline", "baseweather")){
+    #   res_r_p <- res_r_p %>% 
+    #     mutate(timing_group = "none")
     } else {
       stop("Unmatched priority timing group")
     }
@@ -139,7 +168,7 @@ for (r in seq_along(regions)){
       
       ggsave(plot = burn_plot,
              filename = file.path(plot_folder, burn_file),
-             width = 5, height = 7, units = 'in')
+             width = 5.5, height = 7, units = 'in')
       
       
       #expFlame
@@ -159,7 +188,7 @@ for (r in seq_along(regions)){
       
       ggsave(plot = flame_plot,
              filename = file.path(plot_folder, flame_file),
-             width = 5, height = 7, units = 'in')
+             width = 5.5, height = 7, units = 'in')
       
       #HaCBP
       hacbp_plot <- ggplot() +
@@ -178,27 +207,27 @@ for (r in seq_along(regions)){
       
       ggsave(plot = hacbp_plot,
              filename = file.path(plot_folder, hacbp_file),
-             width = 5, height = 7, units = 'in')
+             width = 5.5, height = 7, units = 'in')
       
       
-      #HaCFL/HaCBP
-      hacflhacbp_plot <- ggplot() +
+      #HaCFL
+      hacfl_plot <- ggplot() +
         geom_boxplot(data = res_r_p_y,
-                     mapping = aes(x=TxIntensity, y=HaCFL/HaCBP),
+                     mapping = aes(x=TxIntensity, y=HaCFL),
                      outlier.color = 'black',
                      outlier.shape = 16,
                      outlier.size = 2,
-                     notch = TRUE) + 
+                     notch = TRUE) +
         facet_wrap(~TxType+timing_group) +
         labs(title = plot_label,
              x = "Treatment Intensity")
-      
-      hacflhacbp_file <- paste0(this_reg, '_', this_priority, '_', this_year, '_',
-                           'boxplot_hacbphacbp.jpg')
-      
-      ggsave(plot = hacflhacbp_plot,
-             filename = file.path(plot_folder, hacflhacbp_file),
-             width = 5, height = 7, units = 'in')
+
+      hacfl_file <- paste0(this_reg, '_', this_priority, '_', this_year, '_',
+                           'boxplot_hacfl.jpg')
+
+      ggsave(plot = hacfl_plot,
+             filename = file.path(plot_folder, hacfl_file),
+             width = 5.5, height = 7, units = 'in')
       
       
     } #end y yrs
