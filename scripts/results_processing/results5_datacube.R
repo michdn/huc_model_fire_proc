@@ -17,6 +17,16 @@ output_folder <- file.path("results", "datacube")
 dir.create(output_folder, recursive = TRUE) 
 
 
+#REWORK, since change in absolute script to pull in baseline(s)
+
+
+
+
+
+
+
+
+
 #region results, PREnonburn fix
 sc <- read_csv(file.path(input_folder, "SC_absolute_20240410.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
