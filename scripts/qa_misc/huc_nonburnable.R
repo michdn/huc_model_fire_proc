@@ -174,6 +174,7 @@ rerun <- allcount %>%
 #add region, HUC shp info. 
 rerun <- rerun %>% 
   left_join(hucs_all %>% 
+              st_drop_geometry() %>% 
               dplyr::select(huc12, hucAc, region),
             by = join_by(huc12)) %>% 
   rename(hucAc_orig = hucAc)
@@ -181,6 +182,19 @@ rerun <- rerun %>%
 rerun %>% 
   group_by(region) %>% 
   summarize(count = n())
+
+# add corrected area 
+# terra::cellSize(fm40ca, unit = "m") #900m
+# pixels are 30m x 30m (900m)
+# 9
+
+rerun <- rerun %>% 
+  mutate(count_ok = count_pixels - count_nonburn,
+         area_total_m = count_pixels * 900,
+         area_ok_m = count_ok * 900,
+         area_total_ac = area_total_m * 0.000247105,
+         hucAc = area_ok_m * 0.000247105,
+         area_tot_diff = hucAc_orig - hucAc)
 
 saveRDS(rerun, "qaqc/nonburnable_rerun_list.RDS")
 write_csv(rerun, "qaqc/nonburnable_rerun_list.csv")
