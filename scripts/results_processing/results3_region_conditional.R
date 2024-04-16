@@ -11,11 +11,13 @@ pacman::p_load(
 
 #whether or not to update the HUC area (hucAc) in HUCs with
 # the nonburnable/coastal issue. 
-# MAKE SURE TO ALIGN WITH RUN! 
+# MAKE SURE TO ALIGN WITH RUN! ONLY UPDATE WITH RUNS WITH NBFIXES IN PLACE! 
+#  Fixes: All 'bl'; all 'bw'; the 'nbonly' reruns (SC, CC, SN); 
+#   and NC (but after 'gridfire_prep/nonburnable_huc_indicator.R', gridfire run, etc.)
 update_hucac_nb <- TRUE
 
-#region or folder name for variants/reruns
-reg_code <- "SNbl"
+#region or folder name for variants/reruns #"SC", "SCbl", "SCbw", etc. 
+reg_code <- "SCbw"
 
 input_folder <- file.path('results', 'extracts')
 
@@ -32,7 +34,7 @@ hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
 #Anna's FVS results
 fvs_orig <- read_csv(file.path('data',
                           'data_fvs',
-                          'FVSprocessedOutputsHucsScCcSn.csv'))
+                          'FVSprocessedOutputsHucsScCcSnBase.csv'))
 fvs <- fvs_orig %>% 
   mutate(huc12 = as.character(huc12)) %>% 
   rename(Region = region,
@@ -41,7 +43,10 @@ fvs <- fvs_orig %>%
   #do not need these duplicated/will be duplicated fields
   dplyr::select(-c(regionName,hucAc,
                    wuiGroup,fireGroup,hybridGroup,
-                   timeWui,timeFire,timeHybrid))
+                   timeWui,timeFire,timeHybrid)) %>% 
+  #need to match up baseline 'run' values. 
+  mutate(run = if_else(run == "Baseline", "RunIDx", run),
+         run = if_else(run == "Baseweather", "RunIDx", run))
 
 if (update_hucac_nb){
   nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS")
@@ -123,7 +128,7 @@ combined_expand <- combined %>%
   # will add back in later
   expand(nesting(HUC12, Region), Priority, TxIntensity, TxType, Year)
 
-#Region: : same number, no implicit missing. 
+#If combined_expand has the same number as combined, then there are no implicit missing. 
 
 res <- combined
 
@@ -167,7 +172,9 @@ res_all <- fvs %>%
   inner_join(res %>% 
                mutate(Year = as.numeric(Year)),
              by = c("HUC12", "Region", "Priority", "TxIntensity", "TxType", "run", "Year"))
-nrow(res_all) # confirm still 306,396
+nrow(res_all) 
+
+# IMPORTANT!!  Confirm still same number as combined
 
 
 # missing <- res %>% 
@@ -179,10 +186,11 @@ nrow(res_all) # confirm still 306,396
 
 
 ### Add in area and timing groups ----------------------------
-
+#old fields
 # TxBpPrct == for fire priority
 # TxRffcP == for RFFC (aka hybrid) priority
 # TxWPrct == for WUI priority
+
 res_all <- res_all %>%
   left_join(hucs_shp %>%
               st_drop_geometry() %>%
@@ -207,16 +215,15 @@ res_all <- res_all %>%
 
 
 if (update_hucac_nb){
-  res_all %>% 
+  res_all <- res_all %>% 
     left_join(nb_hucs %>% 
                 dplyr::select(huc12, hucAc) %>% 
                 rename(hucAc_new = hucAc),
-              by = join_by("HUC12" = "huc12")) %>% 
-    mutate(hucAc = if_else(!is.na(hucAc_new), hucAc_new, hucAc)) %>% 
-    dplyr::select()
-    #dplyr::select(-hucAc_new)
+              by = join_by("HUC12" == "huc12")) %>% 
+    rename(hucAc_old = hucAc) %>% 
+    mutate(hucAc = if_else(!is.na(hucAc_new), hucAc_new, hucAc_old)) 
+    
 }
-
 
 #reorder nicely
 res_all <- res_all %>%

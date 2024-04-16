@@ -13,11 +13,17 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
+# Must have region, baseline. (baseweather optional, but included in final)
+
 reg_code <- "SN"
 reg_file <- paste0(reg_code, '_conditional_20240410.csv')
 
 bl_code <- "SNbl"
-bl_file <- paste0(bl_code, '_conditional_NOFVS_20240410.csv')
+bl_file <- paste0(bl_code, '_conditional_20240416.csv')
+
+# bw_code <- "SNbw"
+# bw_file <- paste0(bw_code, "_conditional_20240416.csv")
+
 
 input_folder <- file.path('results', 'conditional')
 
@@ -35,7 +41,13 @@ bl <- read_csv(file.path(input_folder,
                          bl_file)) %>% 
   mutate(HUC12 = as.character(HUC12))
 
+# bw <- read_csv(file.path(input_folder,
+#                          bw_file)) %>% 
+#   mutate(HUC12 = as.character(HUC12))
+
+
 #combine region and baseline/weather results
+#res <- bind_rows(reg, bl, bw)
 res <- bind_rows(reg, bl)
 
 
@@ -138,11 +150,13 @@ res_adj <- res %>%
 ## Final adjustments ----------------------------------------------
 
 res_adj_trim <- res_adj %>% 
-  dplyr::select(-run, 
-                -abp_sum, -cell_acres,
-                -exp_all_firetype,
-                -fireGroup, -wuiGroup, -hybridGroup,
-                -hacfl_avesq)
+  #using any_of b/c fields may or may not exist depending on when run, hucac update, etc.
+  dplyr::select(-any_of(c("run", 
+                "abp_sum", "cell_acres",
+                "exp_all_firetype",
+                "fireGroup", "wuiGroup", "hybridGroup",
+                "hacfl_avesq",
+                "hucAc_old", "hucAc_new")))
 
 stamp <- format(Sys.time(), "%Y%m%d")
 
