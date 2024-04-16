@@ -1,6 +1,7 @@
 # Script for weighting conditional gridfire results to absolute metrics 
 #  using an Annual Burn Probability map
 
+# Alternative script for combining region and baseline/weather runs
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -12,8 +13,11 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-reg_code <- "SNbl"
-reg_file <- paste0(reg_code, '_conditional_NOFVS_20240410.csv')
+reg_code <- "SN"
+reg_file <- paste0(reg_code, '_conditional_20240410.csv')
+
+bl_code <- "SNbl"
+bl_file <- paste0(bl_code, '_conditional_NOFVS_20240410.csv')
 
 input_folder <- file.path('results', 'conditional')
 
@@ -23,9 +27,16 @@ dir.create(output_folder, recursive = TRUE)
 
 ### Data ----------------------------------------------------
 
-res <- read_csv(file.path(input_folder, 
+reg <- read_csv(file.path(input_folder, 
                           reg_file)) %>% 
   mutate(HUC12 = as.character(HUC12))
+
+bl <- read_csv(file.path(input_folder,
+                         bl_file)) %>% 
+  mutate(HUC12 = as.character(HUC12))
+
+#combine region and baseline/weather results
+res <- bind_rows(reg, bl)
 
 
 hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
@@ -78,13 +89,12 @@ head(hucs_abp)
 
 ### baseline HaCBP, calc weights -------------------------------------------
 
-#Year 0 scenarios
-# intensity: 500k (business as usual), 
-# Mean of rest of scenarios (priorities and treatment type)
+# Baseline is 'baseline' runs. (yes, baseweather uses baseline as baseline)
 
 base <- res %>% 
   filter(Year == 2024,
-         TxIntensity == "500k") %>%
+         #priority, txintensity, txtype all 'baseline'. Run is RunIDx
+         Priority == "baseline") %>%
   group_by(HUC12) %>% 
   summarize(HaCBP_mean = mean(HaCBP))
 
@@ -138,9 +148,9 @@ stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(res_adj,
           file.path(output_folder,
-                    paste0(reg_code, '_absolute_expanded_', stamp, '.csv')))
+                    paste0(reg_code, "_", bl_code, "_absolute_expanded_", stamp, ".csv")))
 
 write_csv(res_adj_trim,
           file.path(output_folder,
-                    paste0(reg_code, '_absolute_', stamp, '.csv')))
+                    paste0(reg_code, "_", bl_code, "_absolute_", stamp, ".csv")))
 

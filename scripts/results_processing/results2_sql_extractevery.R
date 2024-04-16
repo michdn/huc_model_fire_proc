@@ -32,13 +32,22 @@ split_rename_run <- function(df){
 
 ### User settings ---------------------------------------------
 
+#for larger regions, when binding together, this will delete and gc
+# to attempt to prevent RAM memory issues
+rm_gc_big <- FALSE
+
 # where to find the sql output files
 # NC, SC, SN, CC
-reg_group <- "SNbl" 
-results_folder <- file.path("R:", 
+reg_group <- "SCbw" 
+results_folder <- file.path("R:",
                             "rem",
                             "MAS_gridfire_outputs",
                             reg_group)
+# results_folder <- file.path("E:", 
+#                             "MAS",
+#                             "raw_sqlite",
+#                             reg_group)
+
 #file.path("run_202401_badblend", "results", reg_group) 
 # file.path("results", "raw_sqlite", reg_group) 
 
@@ -80,6 +89,7 @@ cbp_collect <- list()
 cfl_collect <- list()
 cft_hist_collect <- list()
 cfl_hist_collect <- list()
+ignitions_collect <- list()
 
 
 #LOOP per output file to scrape all data together
@@ -95,6 +105,7 @@ for (i in seq_along(sql_files)){
   tbl_hacfl <- dbReadTable(this_db, "ha_cfl_series")
   tbl_cft_hist <- dbReadTable(this_db, "ha_cft_hist_series")
   tbl_cfl_hist <- dbReadTable(this_db, "ha_cfl_hist_series")
+  tbl_ig <- dbReadTable(this_db, "simulated_ignitions")
   
   
   #add metadata to series
@@ -103,6 +114,7 @@ for (i in seq_along(sql_files)){
   tbl_hacfl_meta <- dplyr::bind_cols(tbl_meta_split, tbl_hacfl)
   tbl_cft_hist_meta <- dplyr::bind_cols(tbl_meta_split, tbl_cft_hist)
   tbl_cfl_hist_meta <- dplyr::bind_cols(tbl_meta_split, tbl_cfl_hist)
+  tbl_ig_meta <- dplyr::bind_cols(tbl_meta_split, tbl_ig)
   
   
   #add data to collector lists
@@ -110,6 +122,7 @@ for (i in seq_along(sql_files)){
   cfl_collect[[i]] <- tbl_hacfl_meta
   cft_hist_collect[[i]] <- tbl_cft_hist_meta
   cfl_hist_collect[[i]] <- tbl_cfl_hist_meta
+  ignitions_collect[[i]] <- tbl_ig_meta
   
   
   #disconnect from database
@@ -136,10 +149,13 @@ write_csv(all_cbp_fires,
 saveRDS(all_cbp_fires,
         file.path(output_folder,
                   paste0(reg_group, "_cbp_all_fires_from_sql.RDS")))
-#delete
-rm(all_cbp_fires)
-rm(cbp_collect)
-gc()
+
+if (rm_gc_big){
+  #delete
+  rm(all_cbp_fires)
+  rm(cbp_collect)
+  gc()
+}
 
 
 #CFL
@@ -150,9 +166,11 @@ write_csv(all_cfl_fires,
 saveRDS(all_cfl_fires,
         file.path(output_folder,
                   paste0(reg_group, "_cfl_all_fires_from_sql.RDS")))
-rm(all_cfl_fires)
-rm(cfl_collect)
-gc()
+if (rm_gc_big){
+  rm(all_cfl_fires)
+  rm(cfl_collect)
+  gc()
+}
 
 #CFT HIST
 all_cft_hist <- do.call(bind_rows, cft_hist_collect)
@@ -162,9 +180,11 @@ write_csv(all_cft_hist,
 saveRDS(all_cft_hist,
         file.path(output_folder,
                   paste0(reg_group,"_cft_hist_from_sql.RDS")))
-rm(all_cft_hist)
-rm(cft_hist_collect)
-gc()
+if (rm_gc_big){
+  rm(all_cft_hist)
+  rm(cft_hist_collect)
+  gc()
+}
 
 #CFL HIST
 all_cfl_hist <- do.call(bind_rows, cfl_hist_collect)
@@ -174,6 +194,15 @@ write_csv(all_cfl_hist,
 saveRDS(all_cfl_hist,
           file.path(output_folder,
                     paste0(reg_group,"_cfl_hist_from_sql.RDS")))
+
+
+#Ignition info, only RDS for reference
+all_ignitions <- do.call(bind_rows, ignitions_collect)
+#save out collected data
+saveRDS(all_ignitions,
+        file.path(output_folder,
+                  paste0(reg_group, "_ignitions_from_sql.RDS")))
+
 
 #end times
 (time_end <- Sys.time())
