@@ -5,8 +5,7 @@ pacman::p_load(
   tidyverse)
 
 
-zc <- readRDS(file.path("qaqc",
-                        "sn_intensity_inversion",
+zc <- readRDS(file.path("qa",
                         "SN_fuel_adjective_comparison_threshold1.5.RDS"))
 
 
