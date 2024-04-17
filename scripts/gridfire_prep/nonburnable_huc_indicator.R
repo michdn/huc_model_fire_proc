@@ -13,10 +13,15 @@ pacman::p_load(
 
 ### User settings -------------------------------------------
 
-region_to_run <- "SN" # "SC", CC", "SN", "NC"
+#FOR SC, CC, SN reruns ONLY
+# region_to_run <- "" # "SC", CC", "SN"
+# region_folder <- file.path("E:", "MAS", "gridfire_prep", 
+#                            "reruns_nonburn", region_to_run)
 
+#FOR NC ONLY
+region_to_run <- "NC"
 region_folder <- file.path("E:", "MAS", "gridfire_prep", 
-                           "reruns_nonburn", region_to_run)
+                           "hucs_gf", region_to_run)
 
 
 ## FML ------------------------------------------------------
