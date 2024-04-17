@@ -27,7 +27,7 @@ box_scales <- "fixed" #"fixed" #free_y
 # will overwrite
 res_orig <- read_csv(file.path("results",
                                "absolute", #"datacube", 
-                               "SN_SNbl_absolute_20240410.csv")) %>% 
+                               "SN_SNbl_absolute_20240416.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
 
 ### Data set up ------------------------------------------------
@@ -101,7 +101,7 @@ res <- bind_rows(res, res_bases)
 year_breaks <- c(2024, 2029, 2034, 2039)
 
 #sampled hucs
-hucs_sample <- read_csv(file.path('qaqc', 'samplehucs.csv'))
+hucs_sample <- read_csv(file.path('qa', 'samplehucs.csv'))
 
 
 

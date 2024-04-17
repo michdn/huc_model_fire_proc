@@ -71,6 +71,20 @@ dbDisconnect(adj_db)
 #remove to prevent future apply from complaining about non-exportable references?
 rm(adj_db)
 
+# #For saving out
+# adjectives %>% 
+#   select(FBFM, FL) %>% 
+#   #matrices must be of same type, raster is numeric
+#   #turn adjectives into factor, basically
+#   mutate(FBFM = as.numeric(FBFM)) %>% 
+#   left_join(adj_codes, by = join_by("FL")) %>% 
+#   bind_rows(tibble(FBFM = c(91, 92, 93, 98, 99),
+#                    adj_code = rep(1, 5),
+#                    FL = rep("nonburn", 5))) %>% 
+#   arrange(FBFM) %>% 
+#   write_csv(file.path("qa", "fbfm_adjectives_crosswalk.csv"))
+# 
+
 
 ### Fuels reclass set up --------------------------------
 
