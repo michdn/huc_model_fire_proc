@@ -13,7 +13,7 @@ pacman::p_load(
 ### user settings -----------------------------------------
 
 #set an above threshold to strip about-the-same-results 
-threshold <- 1.5 # 1.01 = 1%
+threshold <- 1.01 # 1.01 = 1%
 
 
 ### Results import -------------------------------------------
@@ -134,12 +134,17 @@ res_wide <- res_base %>%
                          Priority, TxType, Year, trt_yr))
 
 ### flags -------------------------------------------------------------
+# Should be: 2m < 1m < 500k < baseline
+#    Flipped: baseline > 500k > 1m > 2m
+# flag 2m: if 2m is greater than any of the others
+# flag 1m: if 1m is greater than 500k or baseline
+# flag 500k: if 500k is greater than baseline
 
 res_flags <- res_wide %>% 
-  mutate(pmax1m = pmax(expFlame_1m, expFlame_500k, expFlame_base, na.rm = TRUE),
-         pmax500k = pmax(expFlame_500k, expFlame_base, na.rm = TRUE),
-         t2m = if_else(expFlame_2m > pmax1m * threshold, TRUE, FALSE),
-         t1m = if_else(expFlame_1m > pmax500k * threshold, TRUE, FALSE),
+  mutate(pmin1m = pmin(expFlame_1m, expFlame_500k, expFlame_base, na.rm = TRUE),
+         pmin500k = pmin(expFlame_500k, expFlame_base, na.rm = TRUE),
+         t2m = if_else(expFlame_2m > pmin1m * threshold, TRUE, FALSE),
+         t1m = if_else(expFlame_1m > pmin500k * threshold, TRUE, FALSE),
          t500k = if_else(expFlame_500k > expFlame_base * threshold, TRUE, FALSE),
          tcount = t2m + t1m + t500k,
          tany = if_else(tcount > 0, 1, tcount))
