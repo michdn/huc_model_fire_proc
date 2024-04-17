@@ -17,12 +17,12 @@ options(future.globals.onReference = "error")
 ### user settings -------------------------------------------
 
 #previously flagged HUC-scenario-years
-flagged_raw <- readRDS(file.path("qa", 
-                                 "SN_intensity_inverted_flagged_1.01_20240416.RDS")) 
-#flagged_raw <- readRDS(file.path("qa", 
-#                                 "SN_intensity_inverted_flagged_1.5_20240416.RDS")) 
+flagged_raw <- readRDS(file.path("qa",
+                                 "SN_intensity_inverted_flagged_1.01_20240416.RDS"))
+# flagged_raw <- readRDS(file.path("qa",
+#                                  "SN_intensity_inverted_flagged_1.5_20240416.RDS"))
 #MATCH with IMPORT! 
-threshold <- "1.01"
+threshold <-  "1.01" #"1.5"
 
 ### setup -------------------------------------------
 
@@ -129,6 +129,11 @@ get_adj_zonal_scenario <- function(r){
   count6 <- count_value_pixels(this_raster, this_huc, 6)
   count7 <- count_value_pixels(this_raster, this_huc, 7)
   
+  ave <- exact_extract(this_raster, 
+                       this_huc,
+                       fun = "mean")
+  
+  
   
   #nb VL L M H VH X
   # 1 2  3 4 5  6 7
@@ -145,6 +150,7 @@ get_adj_zonal_scenario <- function(r){
                 H = count5,
                 VH = count6,
                 X = count7,
+                mean = ave,
                 tot_pixels = count_pixels)
   
 }
@@ -178,6 +184,11 @@ get_adj_zonal_baseline <- function(r){
   #nb VL L M H VH X
   # 1 2  3 4 5  6 7
   
+  ave <- exact_extract(this_raster, 
+                       this_huc,
+                       fun = "mean")
+  
+  
   this_res <- c(HUC12 = this_row[["HUC12"]], 
                 Year = this_row[["Year"]],
                 NB_bl = count1,
@@ -187,6 +198,7 @@ get_adj_zonal_baseline <- function(r){
                 H_bl = count5,
                 VH_bl = count6,
                 X_bl = count7,
+                mean_bl = ave,
                 tot_pixels_bl = count_pixels)
   
 }
@@ -214,11 +226,12 @@ system.time(baseline_zonal_raw <- future_sapply(1:nrow(bl_long),
 
 scenario_zonal <- scenario_zonal_raw %>% 
   t() %>% as_tibble() %>% 
-  mutate_at(c("Year", "NB", "VL", "L", "M", "H", "VH", "X", "tot_pixels"), as.numeric)
+  mutate_at(c("Year", "NB", "VL", "L", "M", "H", "VH", "X", "mean", "tot_pixels"), as.numeric)
 
 baseline_zonal <- baseline_zonal_raw %>% 
   t() %>% as_tibble() %>% 
-  mutate_at(c("Year", "NB_bl", "VL_bl", "L_bl", "M_bl", "H_bl", "VH_bl", "X_bl", "tot_pixels_bl"), as.numeric)
+  mutate_at(c("Year", "NB_bl", "VL_bl", "L_bl", "M_bl", "H_bl", "VH_bl", "X_bl", 
+              "mean_bl", "tot_pixels_bl"), as.numeric)
 
 zonal_comp <- scenario_zonal %>% 
   left_join(baseline_zonal,
@@ -230,7 +243,8 @@ zonal_comp <- scenario_zonal %>%
          M_diff = M - M_bl,
          H_diff = H - H_bl,
          VH_diff = VH - VH_bl,
-         X_diff = X - X_bl) 
+         X_diff = X - X_bl,
+         mean_diff = mean - mean_bl) 
 
 zonal_comp <- zonal_comp %>% 
   left_join(flagged_raw %>% 
@@ -241,7 +255,7 @@ zonal_comp <- zonal_comp %>%
               mutate(Priority = if_else(Priority == "Hybrid", "RFFC", Priority)), 
             by = join_by(HUC12, Priority, TxType, Year)) %>% 
   dplyr::select(HUC12, Priority, TxType, TxIntensity, Year, trt_yr,
-                VL_diff, L_diff, M_diff, H_diff, VH_diff, X_diff,
+                mean_diff, VL_diff, L_diff, M_diff, H_diff, VH_diff, X_diff, 
                 tot_pixels,
                 expFlame_base, expFlame_500k,
                 expFlame_1m, expFlame_2m,
