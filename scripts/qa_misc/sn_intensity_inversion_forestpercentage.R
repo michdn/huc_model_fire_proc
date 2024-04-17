@@ -1,9 +1,9 @@
 # qa script
-# tag hucs that have inverted intensity responses
-
+# hucs that have inverted intensity responses
 # based on expFlame
-#  2m < 1m < 500k < baseline
-# if not, flag HUC-scenario-year
+#  2m < 1m < 500k < baseline (should be)
+
+# correlate (scatter plot?) with Dave's forest % of HUC
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -13,13 +13,24 @@ pacman::p_load(
 
 ### Results import -------------------------------------------
 
-# will overwrite
+forest <- read_csv("qa/SN_TM_coverage_by_HUC.csv") %>% 
+  mutate(HUC12 = as.character(HUC12))
+
+#to remove ones affected by nonburn issue, until SNnbonly reruns are done and incorporated
+nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS")
+
+
 res_orig <- read_csv(file.path("results",
-                               "absolute", #"datacube", 
-                               "SN_SNbl_absolute_20240410.csv")) %>% 
+                               "absolute",  
+                               "SN_SNbl_absolute_20240416.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
 
+#filter out nonburnable issue HUCs
 res <- res_orig %>% 
+  filter(!HUC12 %in% (nb_hucs %>% pull(huc12)))
+
+
+res <- res %>% 
   #For graphing in the correct order (generic, used in multiple places, with modifications)
   # make factor with set order 
   mutate(Priority = as.factor(Priority),
@@ -120,15 +131,84 @@ res_wide <- res_base %>%
             by = join_by(HUC12, Region,
                          Priority, TxType, Year, trt_yr))
 
-### flags -------------------------------------------------------------
+### inversions -------------------------------------------------------------
 
-#instead of binary, calc 
+#instead of binary, calc the percent increase from this expFlame to comparison expFlame
 
-res_flags <- res_wide %>% 
+res_inversions <- res_wide %>% 
   mutate(pmax1m = pmax(expFlame_1m, expFlame_500k, expFlame_base, na.rm = TRUE),
          pmax500k = pmax(expFlame_500k, expFlame_base, na.rm = TRUE),
-         t2m = if_else(expFlame_2m > pmax1m * threshold, TRUE, FALSE),
-         t1m = if_else(expFlame_1m > pmax500k * threshold, TRUE, FALSE),
-         t500k = if_else(expFlame_500k > expFlame_base * threshold, TRUE, FALSE),
-         tcount = t2m + t1m + t500k,
-         tany = if_else(tcount > 0, 1, tcount))
+         i2m = if_else(expFlame_2m > pmax1m, ((expFlame_2m - pmax1m)/pmax1m) * 100, NA),
+         i1m = if_else(expFlame_1m > pmax500k, ((expFlame_1m - pmax500k)/pmax500k) * 100, NA),
+         i500k = if_else(expFlame_500k > expFlame_base, ((expFlame_500k - expFlame_base)/expFlame_base) * 100, NA),
+         iany = if_else((is.na(i2m) & is.na(i1m) & is.na(i500k)), FALSE, TRUE))
+
+
+#inversions and forest
+resi <- res_inversions %>% 
+  #only with any inversions
+  filter(iany) %>% 
+  #prep for making long
+  dplyr::select(HUC12, Priority, TxType, Year, i2m, i1m, i500k) %>% 
+  pivot_longer(cols = c(i2m, i1m, i500k)) %>% 
+  #filter only inversions at that intensity
+  filter(!is.na(value)) %>% 
+  #rename to intensity level
+  mutate(TxIntensity = case_when(
+    name == "i2m" ~ "2m",
+    name == "i1m" ~ "1m",
+    name == "i500k" ~ "500k"
+  )) %>% 
+  rename(perc_incr = value) %>% 
+  select(-name) %>% 
+  left_join(forest, by = join_by("HUC12"))
+
+
+### inverted HUCs to forest percentage ------------------------------------
+
+#first pass, HUC level, count of all inversions
+huci <- resi %>% 
+  dplyr::select(HUC12, TM_coverage_percent) %>% 
+  group_by(HUC12, TM_coverage_percent) %>% 
+  summarize(count_inversions = n())
+
+ggplot() + 
+  geom_point(data = huci,
+             mapping = aes(x=TM_coverage_percent,
+                           y=count_inversions))
+
+
+#HUC level, count of inversions > 0.01
+huci01 <- resi %>% 
+  filter(perc_incr > 0.01) %>% 
+  dplyr::select(HUC12, TM_coverage_percent) %>% 
+  group_by(HUC12, TM_coverage_percent) %>% 
+  summarize(count_inversions = n())
+
+ggplot() + 
+  geom_point(data = huci01,
+             mapping = aes(x=TM_coverage_percent,
+                           y=count_inversions))
+
+
+# value of inversions
+ggplot() + 
+  geom_point(data = resi,
+             mapping = aes(x=TM_coverage_percent,
+                           y=perc_incr)) + 
+  labs(title = "SN Intensity inversion by forest cover",
+       y = "Percent increase of inversion",
+       x = "TreeMap coverage percentage") + 
+  stat_smooth(data=resi,
+              aes(x=TM_coverage_percent,
+                  y=perc_incr),
+              method=lm,
+              geom="smooth",
+              formula='y~x',
+              fullrange = TRUE)
+  
+  
+
+
+
+
