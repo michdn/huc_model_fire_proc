@@ -17,12 +17,12 @@ pacman::p_load(
 update_hucac_nb <- TRUE
 
 #region or folder name for variants/reruns #"SC", "SCbl", "SCbw", etc. 
-reg_code <- "SCbw"
+reg_code <- "SNbl"
 
 input_folder <- file.path('results', 'extracts')
 
 output_folder <- file.path('results', 'conditional')
-dir.create(output_folder, recursive = TRUE) 
+dir.create(output_folder, recursive = TRUE)
 
 
 ### HUC & FVS data ----------------------------------------------------
@@ -43,10 +43,31 @@ fvs <- fvs_orig %>%
   #do not need these duplicated/will be duplicated fields
   dplyr::select(-c(regionName,hucAc,
                    wuiGroup,fireGroup,hybridGroup,
-                   timeWui,timeFire,timeHybrid)) %>% 
-  #need to match up baseline 'run' values. 
-  mutate(run = if_else(run == "Baseline", "RunIDx", run),
-         run = if_else(run == "Baseweather", "RunIDx", run))
+                   timeWui,timeFire,timeHybrid)) 
+
+# both baseline and baseweather use the FVS baseline values
+# > fvs %>% filter(run == "Baseline") %>% select(Priority, TxIntensity, TxType, run) %>% distinct()
+# # A tibble: 1 x 4
+# Priority TxIntensity TxType   run     
+# <chr>    <chr>       <chr>    <chr>   
+#   1 baseline baseline    baseline Baseline
+#
+# cbp %>% select(Priority, TxIntensity, TxType, run) %>% distinct()
+# Priority TxIntensity      TxType    run
+# 1 baseweather baseweather baseweather RunIDx
+
+#need to duplicate FVS baseline values for (GF) baseweather results
+fvs_bw <- fvs %>% 
+  filter(run == "Baseline") %>% 
+  mutate(Priority = "baseweather",
+         TxIntensity = "baseweather",
+         TxType = "baseweather") 
+
+fvs <- fvs %>% 
+  bind_rows(fvs_bw) %>% 
+  #need to match up baseline/baseweather 'run' values. 
+  mutate(run = if_else(run == "Baseline", "RunIDx", run))
+  
 
 if (update_hucac_nb){
   nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS")
@@ -105,7 +126,6 @@ ft <- hacft_hist %>%
     names_from = type,
     values_from = burn_frac_ave)
 
-ft
 
 #combined metrics
 combined <- hacbp %>% 
@@ -129,6 +149,8 @@ combined_expand <- combined %>%
   expand(nesting(HUC12, Region), Priority, TxIntensity, TxType, Year)
 
 #If combined_expand has the same number as combined, then there are no implicit missing. 
+nrow(combined)/4
+all.equal(nrow(combined), nrow(combined_expand))
 
 res <- combined
 
@@ -175,6 +197,7 @@ res_all <- fvs %>%
 nrow(res_all) 
 
 # IMPORTANT!!  Confirm still same number as combined
+all.equal(nrow(res_all), nrow(combined))
 
 
 # missing <- res %>% 
