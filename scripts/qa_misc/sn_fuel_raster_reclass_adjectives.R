@@ -11,14 +11,20 @@ pacman::p_load(
   terra,
   exactextractr,
   DBI,
-  future.apply)
+  future.apply,
+  progressr)
 
 options(future.globals.onReference = "error")
 
+#handlers(global=TRUE)
+handlers("progress")
 
 ### User settings --------------------------------------
 
-folder_to_run <- "baseline" #"baseline" #SN"
+adj_to_use <- "ROS" #"ROS" "FL" (rate of spread, or flame length)
+
+
+folder_to_run <- "SN" #"baseline" #SN"
 
 #raster locations
 raster_folder <- file.path("E:", "MAS", "blended_rasters",
@@ -26,7 +32,7 @@ raster_folder <- file.path("E:", "MAS", "blended_rasters",
 
 #adjective raster output
 outpath <- file.path("E:", "MAS", "blended_rasters",
-                     paste0(folder_to_run, "_adjective"))
+                     paste0(folder_to_run, "_adjective_", adj_to_use))
 dir.create(outpath, recursive = TRUE)
 
 ### Data ------------------------------------------------
@@ -39,32 +45,58 @@ adj_db <- dbConnect(RSQLite::SQLite(), adj_file)
 
 adjectives <- dbReadTable(adj_db, "FBFM_behavior_adjectives")
 
-#nb VL L M H VH X
-# 1 2  3 4 5  6 7
-adj_codes <- tibble(FL = c("VL", "L", "M", "H", "VH", "X"),
-                    adj_code = 2:7)
 
 nonburn_codes <- tibble(FBFM = c(91, 92, 93, 98, 99),
                         adj_code = rep(1, 5))
 #0 is no data in raster
 
+if (adj_to_use == "FL"){
+  
+  #nb VL L M H VH X
+  # 1 2  3 4 5  6 7
+  adj_codes <- tibble(FL = c("VL", "L", "M", "H", "VH", "X"),
+                      adj_code = 2:7)
+  
+  
+  adj_xwalk <- adjectives %>% 
+    select(FBFM, FL) %>% 
+    #matrices must be of same type, raster is numeric
+    #turn adjectives into factor, basically
+    mutate(FBFM = as.numeric(FBFM)) %>% 
+    left_join(adj_codes, by = join_by("FL")) %>% 
+    dplyr::select(-FL) %>% 
+    #add nonburnables as a 0 category
+    bind_rows(nonburn_codes) %>%
+    #matrix for terra::classify()
+    as.matrix
+  
+} else if (adj_to_use == "ROS"){
+  
+  #nb VL L M H VH X
+  # 1 2  3 4 5  6 7
+  adj_codes <- tibble(ROS = c("VL", "L", "M", "H", "VH", "X"),
+                      adj_code = 2:7)
+  
+  
+  adj_xwalk <- adjectives %>% 
+    select(FBFM, ROS) %>% 
+    #matrices must be of same type, raster is numeric
+    #turn adjectives into factor, basically
+    mutate(FBFM = as.numeric(FBFM)) %>% 
+    left_join(adj_codes, by = join_by("ROS")) %>% 
+    dplyr::select(-ROS) %>% 
+    #add nonburnables as a 0 category
+    bind_rows(nonburn_codes) %>%
+    #matrix for terra::classify()
+    as.matrix
+  
+}
 
-adj_xwalk <- adjectives %>% 
-  select(FBFM, FL) %>% 
-  #matrices must be of same type, raster is numeric
-  #turn adjectives into factor, basically
-  mutate(FBFM = as.numeric(FBFM)) %>% 
-  left_join(adj_codes, by = join_by("FL")) %>% 
-  dplyr::select(-FL) %>% 
-  #add nonburnables as a 0 category
-  bind_rows(nonburn_codes) %>%
-  #matrix for terra::classify()
-  as.matrix
 
 #adjectives
 #FBFM - the fuel model number 
 #FL - flame length adjective
-#(ROS - the rate of spread adjective)
+#ROS - the rate of spread adjective
 
 dbDisconnect(adj_db)
 
@@ -117,11 +149,30 @@ reclass_fuel <- function(r){
   terra::writeRaster(this_fml_adj,
                      this_row[["out_file"]])
 
+  #report progress
+  p(sprintf("r=%g", r))
+  
 }
 
 
 plan(multisession, workers = availableCores(omit=1))
 
-system.time(future_lapply(1:nrow(fuel_tbl), reclass_fuel))
+#system.time(future_lapply(1:nrow(fuel_tbl), reclass_fuel))
 
+(start_time <- Sys.time())
+with_progress({
+  p <- progressor(along = 1:nrow(fuel_tbl))
+  future_lapply(1:nrow(fuel_tbl), reclass_fuel)
+})
+(end_time <- Sys.time())
+(elapsed_time <- end_time - start_time)
+
+
+#NOT WORKING. could not find function p
+# # function with future and progress
+# progress_future <- function(xs){
+#   p <- progressor(along = xs)
+#   future_lapply(xs, reclass_fuel)
+# }
+#system.time(progress_future(1:nrow(fuel_tbl)))
 
