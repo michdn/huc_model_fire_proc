@@ -17,24 +17,14 @@ output_folder <- file.path("results", "datacube")
 dir.create(output_folder, recursive = TRUE) 
 
 
-#REWORK, since change in absolute script to pull in baseline(s)
-
-
-
-
-
-
-
-
-
 #region results, PREnonburn fix
-sc <- read_csv(file.path(input_folder, "SC_absolute_20240410.csv")) %>% 
+sc <- read_csv(file.path(input_folder, "SC_SCbl_SCbw_absolute_20240510.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-cc <- read_csv(file.path(input_folder, "CC_absolute_20240410.csv")) %>% 
+cc <- read_csv(file.path(input_folder, "CC_CCbl_CCbw_absolute_20240510.csv")) %>% 
 mutate(HUC12 = as.character(HUC12))
 
-sn <- read_csv(file.path(input_folder, "SN_absolute_20240410.csv")) %>% 
+sn <- read_csv(file.path(input_folder, "SN_SNbl_SNbw_absolute_20240423.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
 
@@ -47,11 +37,6 @@ sn <- read_csv(file.path(input_folder, "SN_absolute_20240410.csv")) %>%
 #ccnb
 #snnb
 
-#baseline and baseweather, POSTnonburn fix
-
-snbl <- read_csv(file.path(input_folder, "SNbl_absolute_20240410.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
-#snbw
 
 ### nonburn correction -------------------------------------
 
@@ -69,10 +54,10 @@ snbl <- read_csv(file.path(input_folder, "SNbl_absolute_20240410.csv")) %>%
 
 ### Bind and save -------------------------------------------
 
-cube <- bind_rows(sc, cc, sn, snbl) #, nc) 
+cube <- bind_rows(sc, cc, sn) #, nc) 
 
 stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(cube,
           file.path(output_folder,
-                    paste0('datacube_', "interim_sc_cc_sn_snbl", stamp, '.csv')))
+                    paste0('datacube_', "interim_sc_cc_sn_bl_bw_", stamp, '.csv')))
