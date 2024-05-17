@@ -13,16 +13,16 @@ pacman::p_load(
 
 ### User settings ---------------------------------------------
 
-# Must have region, baseline. (baseweather optional, but included in final)
+# Must have region, baseweather (used for conversion), should have baseline too.
 
-reg_code <- "SN"
+reg_code <- "SC"
 reg_file <- paste0(reg_code, '_conditional_20240410.csv')
 
-bl_code <- "SNbl"
+bl_code <- "SCbl"
 bl_file <- paste0(bl_code, '_conditional_20240416.csv')
 
-# bw_code <- "SNbw"
-# bw_file <- paste0(bw_code, "_conditional_20240416.csv")
+bw_code <- "SCbw"
+bw_file <- paste0(bw_code, "_conditional_20240423.csv")
 
 
 input_folder <- file.path('results', 'conditional')
@@ -41,14 +41,14 @@ bl <- read_csv(file.path(input_folder,
                          bl_file)) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-# bw <- read_csv(file.path(input_folder,
-#                          bw_file)) %>% 
-#   mutate(HUC12 = as.character(HUC12))
+bw <- read_csv(file.path(input_folder,
+                         bw_file)) %>%
+  mutate(HUC12 = as.character(HUC12))
 
 
 #combine region and baseline/weather results
-#res <- bind_rows(reg, bl, bw)
-res <- bind_rows(reg, bl)
+res <- bind_rows(reg, bl, bw)
+#res <- bind_rows(reg, bl)
 
 
 hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
@@ -105,15 +105,17 @@ head(hucs_abp)
 
 base <- res %>% 
   filter(Year == 2024,
-         #priority, txintensity, txtype all 'baseline'. Run is RunIDx
-         Priority == "baseline") %>%
-  group_by(HUC12) %>% 
-  summarize(HaCBP_mean = mean(HaCBP))
+         #priority, txintensity, txtype all 'baseweather'. Run is RunIDx (but RunIDx is also baseline)
+         Priority == "baseweather") %>%
+  #group_by(HUC12) %>% 
+  #summarize(HaCBP_mean = mean(HaCBP))
+  #with baseweather, single value now, so summary needed
+  dplyr::select(HUC12, HaCBP)
 
 
 weighting <- base %>% 
   left_join(hucs_abp, by = join_by("HUC12" == "huc12")) %>% 
-  mutate(sim_burned = HaCBP_mean * 200 * hucAc, #acres
+  mutate(sim_burned = HaCBP * 200 * hucAc, #acres
          sim_yrs = sim_burned / abp_burned)
 
 #histogram of sim yrs
@@ -162,9 +164,11 @@ stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(res_adj,
           file.path(output_folder,
-                    paste0(reg_code, "_", bl_code, "_absolute_expanded_", stamp, ".csv")))
+                    paste0(reg_code, "_", bl_code, "_", bw_code,
+                           "_absolute_expanded_", stamp, ".csv")))
 
 write_csv(res_adj_trim,
           file.path(output_folder,
-                    paste0(reg_code, "_", bl_code, "_absolute_", stamp, ".csv")))
+                    paste0(reg_code, "_", bl_code, "_", bw_code,
+                           "_absolute_", stamp, ".csv")))
 
