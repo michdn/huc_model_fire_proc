@@ -14,14 +14,20 @@ pacman::p_load(
 #Mounted shared: R:\rem
 shared <- file.path("R:", "rem")
 
+region_to_run <- "NC" # only matters for SN and NC
+
 # run ids, include _ if runid only, important for single digit runids
 selected_list <- 
-  c("RunID1_SN_WUI_500k_trt4", "RunID1_SN_WUI_500k_trt6", 
-    "RunID3_SN_Fire_500k_trt6",
-    "RunID5_SN_RFFC_1m_trt4", "RunID5_SN_RFFC_1m_trt6", 
-    "RunID6_SN_Fire_1m_trt1", 
-    "RunID7_SN_WUI_2m_trt6", 
-    "RunID9_SN_Fire_2m_trt6") #SN
+  c("RunID10_NC_WUI_500k_trt1", "RunID15_NC_Fire_1m_trt6") #NC round 2
+  # c("RunID10_NC_WUI_500k_trt7", "RunID12_NC_Fire_500k_trt1", 
+  #   "RunID15_NC_Fire_1m_trt7", "RunID17_NC_RFFC_2m_trt6", 
+  #   "RunID18_NC_Fire_2m_trt6") #NC round 1
+  # c("RunID1_SN_WUI_500k_trt4", "RunID1_SN_WUI_500k_trt6", 
+  #   "RunID3_SN_Fire_500k_trt6",
+  #   "RunID5_SN_RFFC_1m_trt4", "RunID5_SN_RFFC_1m_trt6", 
+  #   "RunID6_SN_Fire_1m_trt1", 
+  #   "RunID7_SN_WUI_2m_trt6", 
+  #   "RunID9_SN_Fire_2m_trt6") #SN
   #'CC.+trt6'
   #'RunID30_.+trt6|RunID32_.+trt6|RunID33_.+trt1|RunID34_.+trt1|RunID35_.+trt4|RunID36_.+trt4' #CC
   #'RunID21_.+trt1|RunID25_.+trt1|RunID23_.+trt1' # trt4 # part of SC
@@ -34,7 +40,7 @@ outfolder <- file.path(
   #backslashes escaped
   "\\\\tsclient", 
   "C", "Users", "nekodawn", "code_local", 
-  "huc_model_fire", "qaqc_fvs", "sn_qaqc") #sc_qaqc, cc_qaqc, nc_qaqc, sn_qaqc
+  "huc_model_fire", "qaqc_fvs", "nc_qaqc") #sc_qaqc, cc_qaqc, nc_qaqc, sn_qaqc
 
 #original fvs
 fvs_names_orig <- read_csv(file.path("data", "FvsNames.csv"))
@@ -107,51 +113,103 @@ cc_files_rem <- list.files(selected_rem,
 fml_files_rem <- grep(fml_files_rem, pattern="_2044_", invert=TRUE, value=TRUE)
 cc_files_rem <- grep(cc_files_rem, pattern="_2044_", invert=TRUE, value=TRUE)
 
+
+#fml always new
+fml_files <- fml_files_rem 
+# cc may be on rem or in bluejay archive
+
 # NOTE: NOT dealing with this, as not selected SN runs
 # Need to REMOVE any unarchived canopy layers from FVS_fuels (NOT FVS_Fuels2)
 #  as pulling those from bluejay source
 # Run9 trt1 and trt4
 
-
-#special SN bluejay local folder
-all_orig_sn <- list.files(file.path('data', 'data_fuels_sn'),
-                          full.names = TRUE,
-                          pattern="RunID.+tif$")
-#get selected
-selected_orig_sn <- grep(pattern=selected_runs,
-                         all_orig_sn,
-                         value=TRUE)
-#We need to remove all fml files (new will be in R:/rem/)
-selected_sn <- grep(pattern="fml_.+tif$", 
-                    selected_orig_sn,
-                    invert=TRUE,
-                    value=TRUE)
-#we also need to remove the old trt6 FVS_fuels, but only for affected
-# remove e.g.
-# RunID2_SN_RFFC_500k_trt6_2024_fml_32611_FF_FVS.tif"
-# #RunID2, RunID3, RunID5, RunID7, RunID8, RunID9
-selected_sn2 <- grep(pattern=sn6_pattern, #set above 
-                    selected_sn,
-                    invert=TRUE,
-                    value=TRUE)
-
-#get fml and cc (note: no fml will be pulled from blue)
-# fml_files_blue <- grep(selected_sn2, 
-#                        pattern="RunID.+_fml_.+tif$",
-#                        value=TRUE)
-cc_files_blue <- grep(selected_sn2, 
-                      pattern="RunID.+_cc_.+tif$", 
+if (region_to_run == "SN"){
+  # SN correct old non-fml rasters
+  #special SN bluejay local folder
+  all_orig_sn <- list.files(file.path('data', 'data_fuels_sn_badblend'),
+                            full.names = TRUE,
+                            pattern="RunID.+tif$")
+  #get selected
+  selected_orig_sn <- grep(pattern=selected_runs, 
+                           all_orig_sn,
+                           value=TRUE)
+  
+  #We need to remove all fml files (new will be in R:/rem/)
+  selected_sn <- grep(selected_orig_sn,
+                      pattern="fml_.+tif$",
+                      invert=TRUE,
                       value=TRUE)
+  #we also need to remove the old trt6 FVS_fuels, but only for affected
+  fuel_files_blue <- grep(selected_sn,
+                          pattern=sn6_pattern, #set above 
+                          invert=TRUE,
+                          value=TRUE)
+  # Also need to REMOVE 2044
+  fuel_files_blue <- grep(fuel_files_blue, 
+                          pattern="_2044_", 
+                          invert=TRUE, 
+                          value=TRUE)
+
+  cc_files_blue <- grep(fuel_files_blue, 
+                        pattern="RunID.+_cc_.+tif$", 
+                        value=TRUE)
+  
+  #combine
+  cc_files <- c(cc_files_rem, cc_files_blue)
+  
+} else if (region_to_run == "NC"){
+  
+  nc6 <- c("RunID11_NC_RFFC_500k_trt6", "RunID12_NC_Fire_500k_trt6", "RunID14_NC_RFFC_1m_trt6",
+           "RunID15_NC_Fire_1m_trt6", "RunID17_NC_RFFC_2m_trt6", "RunID18_NC_Fire_2m_trt6") 
+  nc6_pattern <- paste(nc6, collapse="|")
+  
+  # SN correct old non-fml rasters
+  #special SN bluejay local folder
+  all_orig_nc <- list.files(file.path('data', 'data_fuels_nc_badblend'),
+                            full.names = TRUE,
+                            pattern="RunID.+tif$")
+  
+  #get selected
+  selected_orig_nc <- grep(all_orig_nc,
+                           pattern=selected_runs,#"trt4",
+                           #invert=TRUE,
+                           value=TRUE)
+  
+  #We need to remove all fml files (new will be in R:/rem/)
+  selected_nc <- grep(selected_orig_nc,
+                      pattern="fml_.+tif$",
+                      invert=TRUE,
+                      value=TRUE)
+  
+  #we also need to remove the old trt6 FVS_fuels, but only for affected
+  fuel_files_blue <- grep(selected_nc,
+                          pattern=nc6_pattern, #set above 
+                          invert=TRUE,
+                          value=TRUE)
+  
+  # Also need to REMOVE 2044
+  fuel_files_blue <- grep(fuel_files_blue, 
+                          pattern="_2044_", 
+                          invert=TRUE, 
+                          value=TRUE)
+  
+  cc_files_blue <- grep(fuel_files_blue, 
+                        pattern="RunID.+_cc_.+tif$", 
+                        value=TRUE)
+  
+  #combine
+  cc_files <- c(cc_files_rem, cc_files_blue)
+  
+} else {
+  cc_files <- cc_files_rem
+}
 
 
-# Also need to REMOVE 2044
-#fml_files_blue <- grep(fml_files_blue, pattern="_2044_", invert=TRUE, value=TRUE)
-cc_files_blue <- grep(cc_files_blue, pattern="_2044_", invert=TRUE, value=TRUE)
+
+
 
 
 #combine sources
-fml_files <- fml_files_rem #c(fml_files_rem, fml_files_blue)
-cc_files <- c(cc_files_rem, cc_files_blue)
 
 
 # No pattern parameter in list.dirs unlike list.files
@@ -180,4 +238,11 @@ file.copy(from=cc_files, to=outfolder)
 
 (time_end <- Sys.time())
 (time_end - time_start) 
+
+
+## extra
+# cbd_files_rem <- list.files(selected_rem,
+#                             full.names=TRUE,
+#                             pattern="RunID.+_trt7_.+_cbd_.+tif$")
+# file.copy(from=cbd_files_rem, to=outfolder)
 

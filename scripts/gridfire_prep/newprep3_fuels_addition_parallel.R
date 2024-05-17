@@ -19,7 +19,7 @@ options(future.globals.onReference = "error")
 
 ### User settings ---------------------------------------------
 
-region_to_run <- "SN" #"CC", "SN", "NC"
+region_to_run <- "NC" #"CC", "SN", "NC"
 
 base_folder <- file.path("E:", "MAS", "gridfire_prep", "hucs_gf")
 
@@ -122,39 +122,85 @@ length(fuel_files_rem)
 # Total 225 + 63 = 288
 
 
-# SN correct old non-fml rasters
-#special SN bluejay local folder
-all_orig_sn <- list.files(file.path('data', 'data_fuels_sn'),
-                          full.names = TRUE,
-                          pattern="RunID.+tif$")
-#get region (none if not SN)
-selected_orig_sn <- grep(pattern=region_to_run, 
-                         all_orig_sn,
-                         value=TRUE)
+if (region_to_run == "SN"){
+  # SN correct old non-fml rasters
+  #special SN bluejay local folder
+  all_orig_sn <- list.files(file.path('data', 'data_fuels_sn_badblend'),
+                            full.names = TRUE,
+                            pattern="RunID.+tif$")
+  #get region (none if not SN)
+  selected_orig_sn <- grep(pattern=region_to_run, 
+                           all_orig_sn,
+                           value=TRUE)
+  
+  #We need to remove all fml files (new will be in R:/rem/)
+  selected_sn <- grep(selected_orig_sn,
+                      pattern="fml_.+tif$",
+                      invert=TRUE,
+                      value=TRUE)
+  #27 * 4 years * 4 fuel files = 432
+  #we also need to remove the old trt6 FVS_fuels, but only for affected
+  fuel_files_blue <- grep(selected_sn,
+                          pattern=sn6_pattern, #set above 
+                          invert=TRUE,
+                          value=TRUE)
+  # 432 - (6 * 4 fuels * 4 years) = 336
+  # Also need to REMOVE 2044
+  fuel_files_blue <- grep(fuel_files_blue, 
+                          pattern="_2044_", 
+                          invert=TRUE, 
+                          value=TRUE)
+  # 336 - (21 remaining scenarios * 4 fuels) = 252
+  
+  #combine
+  fuel_files <- c(fuel_files_rem, fuel_files_blue)
+  
+} else if (region_to_run == "NC"){
+  
+  nc6 <- c("RunID11_NC_RFFC_500k_trt6", "RunID12_NC_Fire_500k_trt6", "RunID14_NC_RFFC_1m_trt6",
+           "RunID15_NC_Fire_1m_trt6", "RunID17_NC_RFFC_2m_trt6", "RunID18_NC_Fire_2m_trt6") 
+  nc6_pattern <- paste(nc6, collapse="|")
+  
+  # SN correct old non-fml rasters
+  #special SN bluejay local folder
+  all_orig_nc <- list.files(file.path('data', 'data_fuels_nc_badblend'),
+                            full.names = TRUE,
+                            pattern="RunID.+tif$")
+  #remove trt4
+  selected_orig_nc <- grep(all_orig_nc,
+                           pattern="trt4",
+                           invert=TRUE,
+                           value=TRUE)
+  
+  #We need to remove all fml files (new will be in R:/rem/)
+  selected_nc <- grep(selected_orig_nc,
+                      pattern="fml_.+tif$",
+                      invert=TRUE,
+                      value=TRUE)
+  
+  #we also need to remove the old trt6 FVS_fuels, but only for affected
+  fuel_files_blue <- grep(selected_nc,
+                          pattern=nc6_pattern, #set above 
+                          invert=TRUE,
+                          value=TRUE)
+  
+  # Also need to REMOVE 2044
+  fuel_files_blue <- grep(fuel_files_blue, 
+                          pattern="_2044_", 
+                          invert=TRUE, 
+                          value=TRUE)
+  # 144
+  
+  
+  #combine
+  fuel_files <- c(fuel_files_rem, fuel_files_blue)
+  #540
+  
+} else {
+  fuel_files <- fuel_files_rem
+}
 
-#We need to remove all fml files (new will be in R:/rem/)
-selected_sn <- grep(selected_orig_sn,
-                    pattern="fml_.+tif$",
-                    invert=TRUE,
-                    value=TRUE)
-#27 * 4 years * 4 fuel files = 432
-#we also need to remove the old trt6 FVS_fuels, but only for affected
-fuel_files_blue <- grep(selected_sn,
-                        pattern=sn6_pattern, #set above 
-                        invert=TRUE,
-                        value=TRUE)
-# 432 - (6 * 4 fuels * 4 years) = 336
-# Also need to REMOVE 2044
-fuel_files_blue <- grep(fuel_files_blue, 
-                        pattern="_2044_", 
-                        invert=TRUE, 
-                        value=TRUE)
-# 336 - (21 remaining scenarios * 4 fuels) = 252
-
-
-#combine
-fuel_files <- c(fuel_files_rem, fuel_files_blue)
-
+nrow(fuel_files)
 #should be 540 now for any region 
 
 #write_csv(tibble(filelocation = fuel_files), 'sn_fuel_files_log.csv')
