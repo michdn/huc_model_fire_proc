@@ -12,17 +12,30 @@ pacman::p_load(
 #whether or not to update the HUC area (hucAc) in HUCs with
 # the nonburnable/coastal issue. 
 # MAKE SURE TO ALIGN WITH RUN! 
-update_hucac_nb <- TRUE
+update_hucac_nb <- FALSE #TRUE
 
 #region or folder name for variants/reruns
-reg_code <- "SNbl"
+reg_code <- "extreme_wind_1k"
 
-input_folder <- file.path('results', 'extracts')
+#reg_code <- "WindTempRH98-100_1k"
+#reg_code <- "top200Wind" #"top200RH" #"temp87to100percentile" #"temp74to87percentile" #"temp61to74percentile"
+#reg_code <- "top200Wind_1k"
+#reg_code <- "top200RH_1k"
+#reg_code <- "temp87to100percentile_baseline_1k"
+#reg_code <- "temp74to87percentile_baseline_1k"
+#reg_code <- "temp61to74percentile_baseline_1k"
+
+
+
+input_folder <- file.path("qa", "qa_weather")
+output_folder <- file.path("qa", "qa_weather")
+
+#input_folder <- file.path('results', 'extracts')
 # file.path('run_202401_badblend', 'results_raw_extraction_test') 
  #file.path('results', 'csv_extraction')
 
-output_folder <- file.path('results', 'conditional')
-dir.create(output_folder, recursive = TRUE) 
+#output_folder <- file.path('results', 'conditional')
+#dir.create(output_folder, recursive = TRUE) 
 
 
 ### HUC & FVS data ----------------------------------------------------
@@ -61,7 +74,9 @@ hacbp <- cbp %>%
 
 hacfl <- cfl %>% 
   group_by(HUC12, Region, Priority, TxIntensity, TxType, run, Year, mas_scenario) %>% 
-  summarize(HaCFL = mean(huc_avg_fl), .groups='drop')
+  summarize(HaCFL = mean(huc_avg_fl), 
+            hacfl_avesq = mean(huc_avg_fl^2),
+            .groups='drop')
 
 hacft_hist <- cft_hist %>% 
   group_by(HUC12, Region, Priority, TxIntensity, TxType, run, Year, mas_scenario, fire_type) %>% 

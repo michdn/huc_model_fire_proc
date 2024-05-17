@@ -38,10 +38,21 @@ rm_gc_big <- FALSE
 
 # where to find the sql output files
 # NC, SC, SN, CC
-reg_group <- "SCbw" 
+# reg_group is just the name of the folder, so things like e.g. SCbl work 
+#reg_group <- "SNbl" 
+
+reg_group <- "extreme_wind_1k"
+#reg_group <- "WindTempRH98-100_1k"
+#reg_group <- "top200Wind_1k"
+#reg_group <- "top200RH_1k"
+#reg_group <- "temp87to100percentile_baseline_1k"
+#reg_group <- "temp74to87percentile_baseline_1k"
+#reg_group <- "temp61to74percentile_baseline_1k"
+
 results_folder <- file.path("R:",
                             "rem",
                             "MAS_gridfire_outputs",
+                            "SN_wx_exploration",
                             reg_group)
 # results_folder <- file.path("E:", 
 #                             "MAS",
@@ -52,7 +63,9 @@ results_folder <- file.path("R:",
 # file.path("results", "raw_sqlite", reg_group) 
 
 # where to write csv summary files
-output_folder <- file.path("results", "extracts")
+#output_folder <- file.path("results", "extracts")
+output_folder <- file.path("qa", "qa_weather")
+
 
 # file.path("run_202401_badblend", "results_raw_extraction_test") 
 #  #file.path("results", "csv_extraction")
