@@ -7,7 +7,6 @@
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse,
-  sf, #MUST include b/c of RDS object 
   terra)
 
 
@@ -18,10 +17,10 @@ pacman::p_load(
 # region_folder <- file.path("E:", "MAS", "gridfire_prep", 
 #                            "reruns_nonburn", region_to_run)
 
-#FOR NC ONLY
+# region_to_run is actually folder name
 region_to_run <- "NC"
 region_folder <- file.path("E:", "MAS", "gridfire_prep", 
-                           "hucs_gf", region_to_run)
+                           "hucs_gf_noweather_nofuel", region_to_run)
 
 
 ## FML ------------------------------------------------------
@@ -107,5 +106,8 @@ for (i in 1:nrow(target_folders)){
 
 write_csv(target_folders %>% 
             dplyr::select(huc12, target, update_time), 
-          file = "log_reruns_indicator_update.csv",
+          file = file.path("logs", 
+                           paste0("log_indicator_update_", 
+                                  region_to_run, 
+                                  ".csv")),
           append = TRUE)
