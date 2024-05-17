@@ -12,13 +12,21 @@ pacman::p_load(
 
 res_orig <- read_csv(file.path("results",
                                "absolute", #"datacube", 
-                               "SN_SNbl_absolute_20240410.csv")) %>% 
+                               "SN_SNbl_SNbw_absolute_20240423.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
+
 
 # res_orig <- read_csv(file.path("results",
 #                           "datacube", 
 #                           "datacube_interim_sc_cc_sn_20240403.csv")) %>% 
 #   mutate(HUC12 = as.character(HUC12)) 
+
+nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS") %>% 
+  filter(region == "SN")
+
+res_orig <- res_orig %>% 
+  mutate(nonburn_coastal = if_else(HUC12 %in% nb_hucs$huc12, TRUE, FALSE)) %>% 
+  filter(nonburn_coastal == FALSE)
 
 
 ### Data set up ------------------------------------------------
@@ -168,7 +176,7 @@ for (r in seq_along(regions)){
       
       ggsave(plot = burn_plot,
              filename = file.path(plot_folder, burn_file),
-             width = 5.5, height = 7, units = 'in')
+             width = 6, height = 7, units = 'in')
       
       
       #expFlame
@@ -188,7 +196,7 @@ for (r in seq_along(regions)){
       
       ggsave(plot = flame_plot,
              filename = file.path(plot_folder, flame_file),
-             width = 5.5, height = 7, units = 'in')
+             width = 6, height = 7, units = 'in')
       
       #HaCBP
       hacbp_plot <- ggplot() +
@@ -207,7 +215,7 @@ for (r in seq_along(regions)){
       
       ggsave(plot = hacbp_plot,
              filename = file.path(plot_folder, hacbp_file),
-             width = 5.5, height = 7, units = 'in')
+             width = 6, height = 7, units = 'in')
       
       
       #HaCFL
@@ -227,7 +235,7 @@ for (r in seq_along(regions)){
 
       ggsave(plot = hacfl_plot,
              filename = file.path(plot_folder, hacfl_file),
-             width = 5.5, height = 7, units = 'in')
+             width = 6, height = 7, units = 'in')
       
       
     } #end y yrs
