@@ -1,4 +1,36 @@
-NEW notes from 2024 March rerun, with good fuel blends, running part on bluejay. 
+﻿Notes for the 2024 May (202405) reruns. New weather, adjustment factor for CBH, (fuel moisture?). No baselines/baseweathers.
+
+Goal: Create per HUC data for input into gridfire.
+
+Data sources:
+ Topographical/HUC: Using LF topo data, Anna's shapefile for HUC12s. 
+ Fuel: Using region-wide fuel rasters created by Dave, blending FVS results and nonforest fuel layers (LF, with nonforest treatment blocks created by Kyle). 
+ Weather: Created by Anna. 
+
+Data processing scripts in huc_model_fire/scripts/prep:
+
+ prep1_folder_building_region.R: 
+	This creates the basic folder structure of region/huc{ID} with topography, weather, and fuels subdirectories. (No scenario subfolders, just the base the fuels folder.) This adds the topographical data (aspect, elevation, slope) and the HUC indicator (uncorrected, see prep1b). 
+
+ prep1b_nonburnable_huc_indicator.R: 
+	This corrects the HUC indicators for the nonburn/coastal issue identified HUCs. For HUCs with >= 50% area as nonburnable (FMFB40 fuels) plus one additional coastal waters HUC (48%), it corrected the HUC indicator to only includes burnable area. This is so that gridfire as it is putting in ignitions, there will be fires that can burn (and therefore the stats aren't dependent on just a few fires). This problem was discovered with coastal waters HUCs (HUCs on the coast that include a lot of the coastal waters in the HUC polygon). This script can be done in any order with the rest. 
+	
+ prep2a_blended_raster_fuels_archive.R: 
+	This collects all the blended fuels region-wide rasters from the shared drive in the many subfolders and collates them into a bluejay local 'archive' folder. Used to then 1) zip and save intermediate files in Drive, and 2) the fuels addition script will pull from here, which will clean up that script a lot. This script has lots of exceptions by each region (NC trt7 replacing trt4, various trt6 reruns from different folders, SN not being fully FVS-unarchived from Jan run to combine with March FVS data, etc.)
+
+ prep2b_fuels_addition_parallel_fromarchive.R: 
+	This takes the region-wide fuel rasters and chops them up per HUC and puts them in the right folders. This pulls from the archive created in prep2a. This is parallelized! Takes about 6 - 12 hours depending on region. This should be run on bluejay (access to archive and all the CPUs/memory). 
+
+
+ prep3_weather_addition.R:
+	This takes Anna's weather JSONs and renames and copies them into the right HUC folders. This only takes a few minutes. 
+
+
+
+
+
+-----------------------------------------------------------------------------
+Notes from 2024 March rerun, with good fuel blends, running part on bluejay. 
 
 Goal: Create per HUC data for input into gridfire. 
 
