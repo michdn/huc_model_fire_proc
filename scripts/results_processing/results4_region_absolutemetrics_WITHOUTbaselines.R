@@ -128,11 +128,13 @@ res_adj <- res %>%
 ## Final adjustments ----------------------------------------------
 
 res_adj_trim <- res_adj %>% 
-  dplyr::select(-run, 
-                -abp_sum, -cell_acres,
-                -exp_all_firetype,
-                -fireGroup, -wuiGroup, -hybridGroup,
-                -hacfl_avesq)
+  #using any_of b/c fields may or may not exist depending on when run, hucac update, etc.
+  dplyr::select(-any_of(c("run", 
+                          "abp_sum", "cell_acres",
+                          "exp_all_firetype",
+                          "fireGroup", "wuiGroup", "hybridGroup",
+                          "hacfl_avesq",
+                          "hucAc_old", "hucAc_new")))
 
 stamp <- format(Sys.time(), "%Y%m%d")
 

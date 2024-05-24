@@ -101,7 +101,7 @@ head(hucs_abp)
 
 ### baseline HaCBP, calc weights -------------------------------------------
 
-# Baseline is 'baseline' runs. (yes, baseweather uses baseline as baseline)
+# Baseweather is 'baseline' runs. (either baseline or baseweather, same in 2024)
 
 base <- res %>% 
   filter(Year == 2024,
