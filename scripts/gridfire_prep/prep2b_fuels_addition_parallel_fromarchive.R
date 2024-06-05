@@ -26,7 +26,7 @@ options(future.globals.onReference = "warning")
 
 ### User settings ---------------------------------------------
 
-region_to_run <- "SC" #"CC", "SN", "NC"
+region_to_run <- "CC" #"SN" "SC", CC", "NC"
 
 base_folder <- file.path("E:", "MAS", 
                          "gridfire_prep", 
@@ -183,11 +183,13 @@ write_csv(fuel_log,
           append = TRUE)
 
 
-# 202405 Timing notes -----------------------
+# 202405 Timing notes from archive -----------------------
 # SN Time difference of 10.30523 hours
+# SC Time difference of 4.362524 hours
+# CC Time difference of 3.808765 hours
 
-
-# Timing notes ----------------------------------
+# Timing notes from reading from share ----------------------------------
+# 2 hours extra for reading from share
 # On Bluejay
 #SC
 # > plan(multisession, workers = availableCores(omit=1))
