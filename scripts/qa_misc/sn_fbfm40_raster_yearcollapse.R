@@ -27,7 +27,7 @@ options(scipen = 999)
 
 #Hitting issues with large numbers
 # ABSOLUTELY CRITICAL SETTING, DO NOT CHANGE
-terraOptions(datatype="FLT8S") #FLT8S INT8S
+terraOptions(datatype="FLT8S") #FLT8S 
 
 ### User settings --------------------------------------
 
