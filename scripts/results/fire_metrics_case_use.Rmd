@@ -32,43 +32,18 @@ pacman::p_load(
 
 ## Single Year: 2039
 
-Initially, we will select a single year, 2039, to explore. A note on weather: The weather in the fire modeling is based on current weather for 2024 and 2029 timesteps, but includes future weather predictions for 2034 and 2039. Whenever you are doing cross-years comparisons, you should remember that there are also weather effects in play.
+Initially, we will select a single year, 2039, to explore. 
 
 ```{r hiddenresimport, include=FALSE, echo=FALSE}
 #run but not show
-res_sc <- read_csv(file.path("..", "..", 
-                             "results", "absolute",
-                             "SC_absolute_expanded_NOFVS_20240319.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
-
-res_cc <- read_csv(file.path("..", "..", 
-                             "results", "absolute",
-                             "CC_absolute_expanded_NOFVS_20240319.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
-
-res_orig <- bind_rows(res_sc, res_cc)
-
-#hidden section to update current interim datacube to what will be in final
-hucs_timing <- st_read(file.path("..", "..", 
-                                 "data", "data_huc", 
-                                 "TxHucsTimingGroups.shp"))
-res_orig <- res_orig %>%
-  left_join(hucs_timing %>%
-              st_drop_geometry() %>%
-              select(huc12,
-                     timeFir, tmHybrd, timeWui) %>% 
-              rename(timeFire = timeFir,
-                     timeHybrid = tmHybrd) %>% 
-              #better sorting with yr_epoch format
-              mutate(across(c(timeFire, timeHybrid, timeWui),
-                            ~ case_when(
-                              . == "yr1to5" ~ paste0("2024_", .),
-                              . == "yr6to10" ~ paste0("2029_", .),
-                              . == "yr11to15" ~ paste0("2034_", .),
-                              . == "yr16to20" ~ paste0("2039_", .),
-                              . == "yr1to5_16to20" ~ paste0("2024_2039_", .),
-                              . == "notTreated" ~ "Not treated"))),
-            by = join_by("HUC12" == "huc12"))
+res_orig <- read_csv(file.path("..", "..",
+                               "results",
+                               "202403_runs",
+                               "datacube", 
+                               "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
+  mutate(HUC12 = as.character(HUC12)) %>% 
+  filter(Region %in% c("SC", "CC"),
+         !Priority %in% c("baseline", "baseweather"))
 
 ```
 
@@ -82,8 +57,8 @@ res_orig <- read_csv("datacube_SC_CC.csv") %>%
 ```{r yr2039}
 
 #Set a factor order so that graphs show in this order
-# Want priority order: 'Fire', 'WUI', 'Hybrid'
-# Want intensity order: '500k', '1m', '2m'
+# Want priority order: "Fire", "WUI", "Hybrid"
+# Want intensity order: "500k", "1m", "2m"
 
 res <- res_orig %>% 
   #For graphing in the correct order
@@ -153,12 +128,13 @@ plot_yr2039_expBurn_overall <- ggplot() +
               aes(x=expBurn_500k, y=expBurn_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE, 
               fullrange = TRUE) + 
   labs(title="Year 2039: Expected Burned Acres",
        x="500k Acres Treated",
-       y="2.3 Million Acres Treated")
+       y="2.3 Million Acres Treated") + 
+  theme_bw()
 plot_yr2039_expBurn_overall
 
 #overall expFlame
@@ -172,12 +148,13 @@ plot_yr2039_expFlame_overall <- ggplot() +
               aes(x=expFlame_500k, y=expFlame_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 2039: Expected Total Flame Index",
+  labs(title="Year 2039: Flame Index",
        x="500k Acres Treated",
-       y="2.3 Million Acres Treated")
+       y="2.3 Million Acres Treated") + 
+  theme_bw()
 plot_yr2039_expFlame_overall
 
 ```
@@ -200,13 +177,14 @@ plot_yr2039_expBurn_reg <- ggplot() +
               aes(x=expBurn_500k, y=expBurn_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE,
               fullrange = TRUE) +
   labs(title="Year 2039: Expected Burned Acres",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
-  facet_wrap(~Region)
+  facet_wrap(~Region) + 
+  theme_bw()
 plot_yr2039_expBurn_reg
 
 plot_yr2039_expFlame_reg <- ggplot() +
@@ -219,13 +197,14 @@ plot_yr2039_expFlame_reg <- ggplot() +
               aes(x=expFlame_500k, y=expFlame_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE,
               fullrange = TRUE) +
-  labs(title="Year 2039: Expected Total Flame Index",
+  labs(title="Year 2039: Flame Index",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
-  facet_wrap(~Region)
+  facet_wrap(~Region) + 
+  theme_bw()
 plot_yr2039_expFlame_reg
 
 
@@ -244,13 +223,14 @@ plot_yr2039_expBurn_pt <- ggplot() +
               aes(x=expBurn_500k, y=expBurn_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE, 
               fullrange = TRUE) + 
   labs(title="Year 2039: Expected Burned Acres",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
-  facet_wrap(~Priority+TxType)
+  facet_wrap(~Priority+TxType) + 
+  theme_bw()
 plot_yr2039_expBurn_pt
 
 plot_yr2039_expFlame_pt <- ggplot() + 
@@ -263,13 +243,14 @@ plot_yr2039_expFlame_pt <- ggplot() +
               aes(x=expFlame_500k, y=expFlame_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="Year 2039: Expected Total Flame Index",
+  labs(title="Year 2039: Flame Index",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
-  facet_wrap(~Priority+TxType)
+  facet_wrap(~Priority+TxType) + 
+  theme_bw()
 plot_yr2039_expFlame_pt
 
 ```
@@ -298,13 +279,14 @@ plot_yr2039_sc_expBurn_pt <- ggplot() +
               aes(x=expBurn_500k, y=expBurn_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE, 
               fullrange = TRUE) + 
   labs(title="SC: Year 2039: Expected Burned Acres",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
-  facet_wrap(~Priority+TxType)
+  facet_wrap(~Priority+TxType) + 
+  theme_bw()
 plot_yr2039_sc_expBurn_pt
 
 plot_yr2039_sc_expFlame_pt <- ggplot() + 
@@ -317,13 +299,14 @@ plot_yr2039_sc_expFlame_pt <- ggplot() +
               aes(x=expFlame_500k, y=expFlame_2m),
               method=lm,
               geom="smooth",
-              formula = 'y ~ x',
+              formula = "y ~ x",
               se = FALSE, 
               fullrange = TRUE) + 
-  labs(title="SC: Year 2039: Expected Total Flame Index",
+  labs(title="SC: Year 2039: Flame Index",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
-  facet_wrap(~Priority+TxType)
+  facet_wrap(~Priority+TxType) + 
+  theme_bw()
 plot_yr2039_sc_expFlame_pt
 ```
 
@@ -350,18 +333,19 @@ ggplot() +
        y="Expected burned acres") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
-  facet_wrap(~Priority) 
+  facet_wrap(~Priority) + 
+  theme_bw()
   
 ggplot() +
   geom_boxplot(data=r39sc,
                mapping=aes(x=scenario_intensity_type, y=expFlame)) +
-    labs(title="SC: Year 2039: Expected Total Flame Index per HUC",
+    labs(title="SC: Year 2039: Flame Index per HUC",
        x="Intensity - Treatment Type",
        y="Expected total flame index") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
-  facet_wrap(~Priority) 
-  
+  facet_wrap(~Priority)
+
 
 
 ```
@@ -385,12 +369,12 @@ ggplot() +
        y="Total expected burned acres") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
-  facet_wrap(~Priority) 
+  facet_wrap(~Priority)
 
 
 ```
 
-Or reworking the summarizing and faceting, here's another way to view the same information. 
+Or reworking the summarizing and faceting, here is another way to view the same information. 
 
 ```{r scbar2}
 r39sc_sum2 <- r39sc %>% 
@@ -414,14 +398,14 @@ ggplot() +
 
 ## Timeseries (boxplots)
 
-The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. Let's select SC as our region, 'Fire' as the priority, and 'trt4' (heavy thinning without removal) as the treatment type. We'll look at the three intensities over the four years. 
+The above examples were exploring a timeslice, a single year. We may also want to look at the results over time. Let us select SC as our region, "Fire" as the priority, and "trt4" (heavy thinning without removal) as the treatment type. We will look at the three intensities over the four years. 
 
 ```{r tssetup}
 
 #Select an example scenario
-this_region <- 'SC'
-this_priority <- 'Fire'
-this_trt <- 'trt4'
+this_region <- "SC"
+this_priority <- "Fire"
+this_trt <- "trt4"
 #create a new nice treatment label
 trt_desc <- case_when(
   this_trt == "trt1" ~ "Moderate thinning biomass removal",
@@ -437,33 +421,32 @@ res_example <- res %>%
          Priority == this_priority,
          TxType == this_trt) 
 
-#Set timing group, the if/else is useful if you are working inside a loop
-if (this_priority == "Fire"){
-  res_example <- res_example %>% 
-    mutate(timing_group = timeFire) 
-} else if (this_priority == "WUI"){
-  res_example <- res_example %>% 
-    mutate(timing_group = timeWui)
-} else if (this_priority == "Hybrid"){
-  res_example <- res_example %>% 
-    mutate(timing_group = timeHybrid) 
-} else {
-  stop("Unmatched priority timing group")
-}
+#Select the appropriate timing group for that Priority, per row
+res_example <- res_example %>% 
+  mutate(timing_group = case_when(
+    Priority == "Fire" ~ timeFire, 
+    Priority == "WUI" ~ timeWui,
+    Priority == "Hybrid" ~ timeHybrid
+  )) %>% 
+  #and WUI 4th category is too long for graph displays
+  mutate(timing_group = if_else(timing_group=="2024_2039_yr1to5_16to20",
+                                "2024_2039",
+                                timing_group))
+
 
 #To ensure these years are displayed on graphs  
 year_breaks <- c(2024, 2029, 2034, 2039) 
 
 ```
 
-We'll plot boxplots with the year along the x-axis and different metrics (expBurn and expFlame) on the y-axis. The graphs will facet on intensity and timing group. 
+We will plot boxplots with the year along the x-axis and different metrics (expBurn and expFlame) on the y-axis. The graphs will facet on intensity and timing group. 
 
 ```{r tsplots}
 
 # Note: the scales can either be fixed across all facets, or set per panel.
 #  Fixed is nice that all axes are the same, but if there are large differences
 #   in values, you may find that free_y produces better graphs. 
-scales_box <- 'fixed' #'free_y'
+scales_box <- "fixed" #"free_y"
 
 ggplot() +
   geom_boxplot(data = res_example,
@@ -472,7 +455,8 @@ ggplot() +
   facet_wrap(~TxIntensity+timing_group, scales=scales_box) +
   labs(title = paste(this_region,
                      this_priority,
-                     trt_desc))
+                     trt_desc)) + 
+  theme_bw()
 
 ggplot() +
   geom_boxplot(data = res_example,
@@ -481,20 +465,21 @@ ggplot() +
   facet_wrap(~TxIntensity+timing_group, scales=scales_box) +
   labs(title = paste(this_region,
                      this_priority,
-                     trt_desc))
+                     trt_desc)) + 
+  theme_bw()
 
 ```
 In the graphs above, the columns of graphs are the different timing groups (when that HUC was treated). The first column are HUCs that were treated in 2024. In their time series, you can see that the fire metrics start off the lowest in 2024, and increase as time passes. The second column was treated in 2029, and we can see the decrease in fire metrics in the 2029 boxplot of their time series.
 
 ## Timeseries (Line graphs)
 
-We can also look at a timeseries of the average of all HUCs (irrespective of timing group). In the example below, we've selected a region and treatment type, and will show timeseries linegraphs by priority (color) and intensity (line type). This way, we can somewhat compare scenarios of the same treatment type against each other. 
+We can also look at a timeseries of the average of all HUCs (irrespective of timing group). In the example below, we have selected a region and treatment type, and will show timeseries linegraphs by priority (color) and intensity (line type). This way, we can somewhat compare scenarios of the same treatment type against each other. 
 
 ```{r tsline}
 
 #Select an example trt
-this_region <- 'SC'
-this_trt <- 'trt4'
+this_region <- "SC"
+this_trt <- "trt4"
 
 #create a new nice treatment label
 trt_desc <- case_when(
@@ -516,7 +501,6 @@ res_exline_mean <- res_exline %>%
   summarize(ave_expBurn = mean(expBurn),
             sum_expBurn = sum(expBurn),
             ave_expFlame = mean(expFlame),
-            ave_expFlamehAc = mean(expFlame/hucAc),
             ave_active = mean(expPcActive),
             .groups = "drop")
 
@@ -525,11 +509,12 @@ ggplot() +
             mapping = aes(x=Year, y=ave_expFlame, 
                           color=Priority, linetype=TxIntensity)) +
   scale_x_continuous(breaks = year_breaks) +
-  scale_color_manual("Priority", values = c('#b81267', '#4daf4a', '#377eb8')) +
-  scale_linetype_manual("Intensity", values = c('solid', 'dashed', 'dotted')) +
+  scale_color_manual("Priority", values = c("#b81267", "#4daf4a", "#377eb8")) +
+  scale_linetype_manual("Intensity", values = c("solid", "dashed", "dotted")) +
   labs(title = paste(this_region,
                      trt_desc),
-       y = 'Mean of expFlame')
+       y = "Mean of expFlame") + 
+  theme_bw()
 
 
 ```
@@ -538,7 +523,7 @@ Here we can see that, in general, the 2m intensity treatments are better than 1m
 
 Similar graphs could be done by switching treatment type and priority around, such that for a particular priority, you can compare all treatment types and intensities. 
 
-Note that this is collapsing all HUCs (averaging) so we may not be seeing the variability of the HUCs within a scenario. 
+Note that this is collapsing all HUCs (averaging) so we may not be seeing the variability of the HUCs within a scenario. We also may want to factor in treatment timing in more detailed analyses as well.  
 
 
 ## Maps and Best Scenarios
@@ -584,7 +569,7 @@ res <- res %>%
 
 ```
 
-In this case, we will look at the average flame index (expFlame) over all years (2024, 2029, 2034, 2039). We will group our data by HUC and scenario (and notably not year, unlike in other places), then summarize to calculate the mean of expFlame. Then we arrange our dataset by the mean of expFlame and take the first (lowest) value per HUC12. This leaves us with a single row per HUC of the scenario that produced the lowest flame index for that HUC. 
+In this case, we will look at a VERY simplified example of the average flame index (expFlame) over all years (2024, 2029, 2034, 2039). We will group our data by HUC and scenario (and notably not Year), then summarize to calculate the mean of expFlame. Then we arrange our dataset by the mean of expFlame and take the first (lowest) value per HUC12. This leaves us with a single row per HUC of the scenario that produced the lowest flame index for that HUC. 
 
 ```{r lowestflame}
 
@@ -664,7 +649,7 @@ plot_best <- ggplot() +
           aes(fill = scenario_itp),
           color = "grey90", size = 0.01) +
   #use viridis color scheme
-  scale_fill_viridis("Scenario", discrete=TRUE, option='viridis') + 
+  scale_fill_viridis("Scenario", discrete=TRUE, option="viridis") + 
   #plot settings for a nicer map
   theme_bw() +
   theme(panel.grid = element_blank(),
@@ -673,7 +658,7 @@ plot_best <- ggplot() +
         legend.text = element_text(size = 10),
         strip.background = element_blank(),
         strip.text = element_text(size = 13),
-        axis.text = element_text(family = 'sans'),
+        axis.text = element_text(family = "sans"),
         legend.position = "right",
         legend.direction = "vertical") +
   #add a scale bar

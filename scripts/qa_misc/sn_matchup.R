@@ -67,11 +67,11 @@ both <- bind_rows(old %>% mutate(status = "old"),
          status = forcats::fct_relevel(status, "old", "new")) %>% 
   #For graphing in the correct order
   # make factor with set order (priority)
-  mutate(Priority = as.factor(Priority),
+  mutate(Priority = as_factor(Priority),
          Priority = forcats::fct_relevel(Priority,
                                          "Fire", "WUI", "Hybrid"),
          #Make factor with set order (intensity))
-         TxIntensity = as.factor(TxIntensity),
+         TxIntensity = as_factor(TxIntensity),
          TxIntensity = forcats::fct_relevel(TxIntensity,
                                             "500k", "1m", "2m"))
 
