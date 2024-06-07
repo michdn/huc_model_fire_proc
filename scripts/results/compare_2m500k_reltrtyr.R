@@ -1,6 +1,8 @@
 # 2m to 500k comparison HaCFL
 # At various years relative to treatment
 
+# Inversions will be positive 
+
 # All scenarios
 # (breakouts below??)
 
@@ -35,14 +37,10 @@ res_2m500k <- res_orig %>%
          hacbp_2m = HaCBP) %>% 
   #join with 500k for single row
   left_join(r500k, by = join_by(Region, HUC12, Year, Priority, TxType)) %>% 
-  #calculate differences (500k - 2m) / 500k as percent change
-  # NEGATIVE is INVERSION
-  mutate(hacfl_500k2m_pc = (hacfl_500k - hacfl_2m) / hacfl_500k,
-         hacbp_500k2m_pc = (hacbp_500k - hacbp_2m) / hacbp_500k,
-         #various HaCFL inversion 'levels' if wanted later
-         hacfl_inv = if_else(hacfl_500k2m_pc < 0, TRUE, FALSE),
-         hacfl_inv001 = if_else(hacfl_500k2m_pc < -0.01, TRUE, FALSE),
-         hacfl_inv01= if_else(hacfl_500k2m_pc < -0.1, TRUE, FALSE))
+  #calculate differences (2m - 500k) / 500k * 100 as percent change
+  # NEGATIVE is POSITIVE
+  mutate(hacfl_2m500k_pc = (hacfl_2m - hacfl_500k) / hacfl_500k * 100,
+         hacbp_2m500k_pc = (hacbp_2m - hacbp_500k) / hacbp_500k * 100)
 
 
 #relative to treatment year
@@ -116,8 +114,8 @@ for (r in seq_along(regions)){
     t1_prep <- res_r_p %>% 
       filter(!is.na(rel_tx),
              !rel_tx == "Pretreatment") %>% 
-      mutate(x=hacbp_500k2m_pc,
-             y=hacfl_500k2m_pc,
+      mutate(x=hacbp_2m500k_pc,
+             y=hacfl_2m500k_pc,
              x_neg = if_else(x < 0, 1, 0),
              y_neg = if_else(y < 0, 1, 0)) %>% 
       group_by(rel_tx, TxType, x_neg, y_neg) %>% 
@@ -145,8 +143,8 @@ for (r in seq_along(regions)){
       geom_point(data = res_r_p %>% 
                    filter(!is.na(rel_tx),
                           !rel_tx == "Pretreatment"),
-                 mapping = aes(x = hacbp_500k2m_pc, 
-                               y = hacfl_500k2m_pc,
+                 mapping = aes(x = hacbp_2m500k_pc, 
+                               y = hacfl_2m500k_pc,
                                color = TxType),
                  shape = 1) + 
       geom_hline(yintercept = 0) + 
@@ -155,9 +153,9 @@ for (r in seq_along(regions)){
       labs(title = paste0(this_reg_label, " - ",
                   "Priority: ", this_priority),
            subtitle = "Facets by treatment type and relative year to treatment",
-           caption = "Negative values are INVERSIONS where 2m is worse than 500k",
-           y = "HaCFL fraction change: (500k - 2m)/500k",
-           x = "HaCBP fraction change: (500k - 2m)/500k") + 
+           caption = "Positive values are INVERSIONS where 2m is worse than 500k",
+           y = "HaCFL fraction change: (2m-500k)/500k*100",
+           x = "HaCBP fraction change: (2m-500k)/500k*100") + 
       facet_wrap(~rel_tx + TxType, dir="v") + 
       geom_label(data=t_r,
                  mapping=aes(label=count, x=max_x, y=max_y), 
