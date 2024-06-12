@@ -17,6 +17,7 @@ pacman::p_load(
 ### Results import -------------------------------------------
 
 res_orig <- read_csv(file.path("results",
+                               "202403_runs",
                                "datacube", 
                                "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
@@ -38,7 +39,7 @@ res_2m500k <- res_orig %>%
   #join with 500k for single row
   left_join(r500k, by = join_by(Region, HUC12, Year, Priority, TxType)) %>% 
   #calculate differences (2m - 500k) / 500k * 100 as percent change
-  # NEGATIVE is POSITIVE
+  # Inversions are POSITIVE
   mutate(hacfl_2m500k_pc = (hacfl_2m - hacfl_500k) / hacfl_500k * 100,
          hacbp_2m500k_pc = (hacbp_2m - hacbp_500k) / hacbp_500k * 100)
 
