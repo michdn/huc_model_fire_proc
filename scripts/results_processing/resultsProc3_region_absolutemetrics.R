@@ -207,7 +207,10 @@ res_adj <- res %>%
   mutate(exp_all_firetype = expSurface + expPassive + expActive,
          expPcSurface = expSurface / exp_all_firetype * 100,
          expPcPassive = expPassive / exp_all_firetype * 100,
-         expPcActive = expActive / exp_all_firetype * 100)
+         expPcActive = expActive / exp_all_firetype * 100) %>% 
+  #handle exception case. DIV by 0 when all firetype = 0, and getting NAs
+  # (HUC 180500040804 in CC had zero sum ABP, so all absolute are 0)
+  mutate(across(c(expPcSurface, expPcPassive, expPcActive), ~ replace_na(., 0)))
 
 
 ## Final adjustments ----------------------------------------------
