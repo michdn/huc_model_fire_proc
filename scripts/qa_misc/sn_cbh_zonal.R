@@ -116,6 +116,17 @@ get_cbh_zonal <- function(r){
     st_transform(st_crs(this_raster))
   
   #extracts
+  
+  
+  #IF ever doing again, edit to fun=c("count", "mean", etc.)
+  
+  
+  
+  
+  
+  
+  
+  
   count_pixels <- exact_extract(this_raster,
                                 this_huc,
                                 fun = "count")
