@@ -13,6 +13,13 @@ pacman::p_load(
   tidyverse,
   viridis)
 
+### User settings -------------------------------------------
+
+#percent change threshold for inversions of HaCFL
+inv_threshold <- 5
+
+inv_color <- "gold"
+inv_text_color <- "gold3"
 
 ### Results import -------------------------------------------
 
@@ -113,7 +120,7 @@ for (r in seq_along(regions)){
     
     #prep for counting (to put on graph)
     t1_prep <- res_r_p %>% 
-      filter(!is.na(rel_tx),
+      filter(!is.na(rel_tx), 
              !rel_tx == "Pretreatment") %>% 
       mutate(x=hacbp_2m500k_pc,
              y=hacfl_2m500k_pc,
@@ -179,6 +186,102 @@ for (r in seq_along(regions)){
            filename = file.path(plot_folder, fn),
            width = 8, height = 9, units = 'in')
     
+    
+    # plot 2, WITH threshold
+    if (is.numeric(inv_threshold)){
+      
+      #prep for counting (to put on graph)
+      # ONLY HaCFL inversions above threshold!!
+      #need to calculate min/maxes BEFORE threshold filtering
+      
+      t2_prep <- t1_prep %>% 
+        rename(count_nothresh = count) %>% 
+        left_join(res_r_p %>%
+                    #threshold
+                    filter(hacfl_2m500k_pc >= inv_threshold) %>% 
+                    #regular set up
+                    filter(!is.na(rel_tx), 
+                           !rel_tx == "Pretreatment") %>% 
+                    mutate(x=hacbp_2m500k_pc,
+                           y=hacfl_2m500k_pc,
+                           x_neg = if_else(x < 0, 1, 0),
+                           y_neg = if_else(y < 0, 1, 0)) %>% 
+                    group_by(rel_tx, TxType, x_neg, y_neg) %>% 
+                    summarize(.groups="drop",
+                              count=n()),
+                  by = join_by(rel_tx, TxType, x_neg, y_neg)) %>% 
+        #drop NAs just to remove warnings
+        drop_na(count)
+      
+      t_r <- t2_prep %>% filter(x_neg==0, y_neg==0)
+      b_r <- t2_prep %>% filter(x_neg==0, y_neg==1)
+      b_l <- t2_prep %>% filter(x_neg==1, y_neg==1)
+      t_l <- t2_prep %>% filter(x_neg==1, y_neg==0)
+      
+      
+      
+      #plotting
+      p_inv_thresh <- ggplot() + 
+        #non threshold inversion points, colors
+        geom_point(data = res_r_p %>% 
+                     filter(hacfl_2m500k_pc < inv_threshold) %>% 
+                     filter(!is.na(rel_tx),
+                            !rel_tx == "Pretreatment"),
+                   mapping = aes(x = hacbp_2m500k_pc, 
+                                 y = hacfl_2m500k_pc,
+                                 color = TxType),
+                   shape = 1) + 
+        #threshold points, highlighted
+        geom_point(data = res_r_p %>% 
+                     #threshold
+                     filter(hacfl_2m500k_pc >= inv_threshold) %>% 
+                     filter(!is.na(rel_tx),
+                            !rel_tx == "Pretreatment"),
+                   mapping = aes(x = hacbp_2m500k_pc, 
+                                 y = hacfl_2m500k_pc),
+                   shape = 1,
+                   color = inv_color) + 
+        geom_hline(yintercept = 0) + 
+        geom_vline(xintercept = 0) + 
+        #add 5% 'threshold' line
+        geom_hline(yintercept = inv_threshold, color=inv_color) +
+        scale_color_brewer("Treatment", palette = "Dark2") + 
+        labs(title = paste0(this_reg_label, " - ",
+                            "Priority: ", this_priority),
+             subtitle = "Facets by treatment type and relative year to treatment",
+             caption = paste0("Positive values are INVERSIONS where 2m is worse than 500k.\nHighlighted points are above the HaCFL inversion threshold, ", inv_threshold, "%.\nCounts are of HaCFL inversions above threshold ONLY."),
+             y = "HaCFL fraction change: (2m-500k)/500k*100",
+             x = "HaCBP fraction change: (2m-500k)/500k*100") + 
+        facet_wrap(~rel_tx + TxType, dir="v") + 
+        geom_label(data=t_r,
+                   mapping=aes(label=count, x=max_x, y=max_y), 
+                   size=3, hjust="inward", alpha=0.5,
+                   color=inv_text_color) +
+        geom_label(data=b_r,
+                   mapping=aes(label=count, x=max_x, y=min_y), 
+                   size=3, hjust="inward", alpha=0.5,
+                   color=inv_text_color) +
+        geom_label(data=b_l,
+                   mapping=aes(label=count, x=min_x, y=min_y), 
+                   size=3, hjust="inward", alpha=0.5,
+                   color=inv_text_color) +
+        geom_label(data=t_l,
+                   mapping=aes(label=count, x=min_x, y=max_y), 
+                   size=3, hjust="inward", alpha=0.5,
+                   color=inv_text_color) +
+        theme_bw() + 
+        theme(aspect.ratio = 1)
+      
+      fn_thresh <- paste0(this_reg, "_", this_priority, 
+                          "_HaCFLvsHaCBP_inversions", 
+                          "_above_", inv_threshold, 
+                          ".jpg")
+       
+      ggsave(plot = p_inv_thresh,
+             filename = file.path(plot_folder, fn_thresh),
+             width = 8, height = 9, units = 'in')
+      
+    }
     
     
   } # end priority
