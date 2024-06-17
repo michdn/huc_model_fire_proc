@@ -1,7 +1,6 @@
 # Script for weighting conditional gridfire results to absolute metrics 
 #  using an Annual Burn Probability map
 
-# Alternative script for combining region and baseline/weather runs
 
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
@@ -47,9 +46,9 @@ if (use_bw){
 }
 
 #folders
-input_folder <- file.path('results', 'conditional')
+input_folder <- file.path("results", "conditional")
 
-output_folder <- file.path('results', 'absolute')
+output_folder <- file.path("results", "absolute")
 dir.create(output_folder, recursive = TRUE) 
 
 
@@ -108,6 +107,20 @@ hucs_shp <- st_read("data/data_huc/TxHucsTimingGroups.shp")
 hucs <- st_transform(hucs_shp, st_crs(abp))
 
 
+# ## testing-----------------------------------
+# zero_huc <- "180500040804"
+# this_huc <- hucs %>% filter(huc12==zero_huc)
+# exact_extract(abp, this_huc, fun="sum", append_cols=c("huc12"))
+# abp2 <- terra::rast("other_datasets/ucsb_calfire/ucsb_burn_severity.tif")
+# exact_extract(abp2, this_huc, fun="sum", append_cols=c("huc12"))
+# exact_extract(abp2, this_huc, fun="variety", append_cols=c("huc12"))
+# abp2_proj <- terra::project(abp2, crs(hucs_shp))
+# huc_zero <- hucs_shp %>% filter(huc12==zero_huc)
+# exact_extract(abp2, huc_zero, fun="sum", append_cols=c("huc12"))
+# terra::extract(abp2_proj, huc_zero)
+# raster::extract(abp, this_huc)
+# exact_extract(abp2_proj, huc_zero, function(value, coverage_fraction ) {table(value)})
+
 ### zonal summary -----------------------------------------------------
 
 #extract the sum of the abp per huc
@@ -116,8 +129,8 @@ hucs <- st_transform(hucs_shp, st_crs(abp))
 # IF switch to a finer resolution ABP, then worry about filtering hucs first
 sum_abp <- exact_extract(abp, 
                          hucs,
-                         fun = 'sum', 
-                         append_cols = c('huc12', 'hucAc'),
+                         fun = "sum", 
+                         append_cols = c("huc12", "hucAc"),
                          progress = TRUE)
 
 #add in cell size and multiply
