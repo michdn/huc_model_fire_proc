@@ -8,7 +8,8 @@
 #' 1. What regions faced the greatest fire risk and where did treatments have the greatest impacts?
 #' 
 #' 1.1 By Region, what was the relative change in Conditional Flame Length and Active Crown Fire from the 500 to 1m to 2.3m acre treatments?
-
+#'
+#' 1.2 Did some Regions have significant areas where 500k intensity were relatively close to the effectiveness of the higher intensity work?
 
 #NOTE: Half translated for spin() but too many issues, abandoned that aspect. Treat as normal .R script for now. 
 
@@ -27,7 +28,7 @@ pacman::p_load(
 
 ### User settings -----------------------------------------
 #+ user, echo=FALSE
-folder_out <- file.path("phase1", "q1_risk")
+folder_out <- file.path("phase1", "q1_riskimpact")
 dir.create(folder_out, recursive = TRUE)
 
 
@@ -370,7 +371,7 @@ ggsave(plot=grid.arrange(top=rst_title, rst_grob),
 
 ### reductions ----------------------------------------------------------
 
-#   By Region, what was the relative change in Conditional Flame Length and Active Crown Fire from the 500 to 1m to 2.3m acre treatments?
+# 1.1 By Region, what was the relative change in Conditional Flame Length and Active Crown Fire from the 500 to 1m to 2.3m acre treatments?
 
 # ? how deal with years/timing
 #   at (initial) treatment year? (timeslice of greatest impact)
@@ -405,20 +406,20 @@ maxredx_1m <- res_wide %>%
 
 #Get 500k and 2m values, percent decrease. 
 maxredx_fl_reg <- left_join(maxredx_2m %>% 
-                           group_by(Region) %>% 
-                           summarize(mean_fl_maxredx_2m = mean(expFlame_2m500k),
-                                     mean_fl_500k = mean(expFlame_500k),
-                                     mean_fl_2m = mean(expFlame_2m),
-                                     mean_fl_maxredx_2m_comp = (mean_fl_2m - mean_fl_500k)) %>% 
-                           mutate(maxredx_fl_2m500k_pc = (mean_fl_2m - mean_fl_500k)/mean_fl_500k*100), 
-                         maxredx_1m %>% 
-                           group_by(Region) %>% 
-                           summarize(mean_fl_maxredx_1m = mean(expFlame_1m500k),
-                                     mean_fl_500k = mean(expFlame_500k),
-                                     mean_fl_1m = mean(expFlame_1m),
-                                     mean_fl_maxredx_1m_comp = (mean_fl_1m - mean_fl_500k)) %>% 
-                           mutate(maxredx_fl_1m500k_pc = (mean_fl_1m - mean_fl_500k)/mean_fl_500k*100), 
-                         by = join_by(Region))
+                              group_by(Region) %>% 
+                              summarize(mean_fl_maxredx_2m = mean(expFlame_2m500k),
+                                        mean_fl_500k = mean(expFlame_500k),
+                                        mean_fl_2m = mean(expFlame_2m),
+                                        mean_fl_maxredx_2m_comp = (mean_fl_2m - mean_fl_500k)) %>% 
+                              mutate(maxredx_fl_2m500k_pc = (mean_fl_2m - mean_fl_500k)/mean_fl_500k*100), 
+                            maxredx_1m %>% 
+                              group_by(Region) %>% 
+                              summarize(mean_fl_maxredx_1m = mean(expFlame_1m500k),
+                                        mean_fl_500k = mean(expFlame_500k),
+                                        mean_fl_1m = mean(expFlame_1m),
+                                        mean_fl_maxredx_1m_comp = (mean_fl_1m - mean_fl_500k)) %>% 
+                              mutate(maxredx_fl_1m500k_pc = (mean_fl_1m - mean_fl_500k)/mean_fl_500k*100), 
+                            by = join_by(Region))
 #maxredx_fl_reg %>% View()
 #Note: mean_fl_500k is different between these, b/c the treatment zones are
 #      different by Priority, so we are looking at a slightly different 
@@ -460,21 +461,22 @@ maxredx_1m_4yr <- res_wide %>%
 #by region summary. Reductions. 
 
 #Get 500k and 2m values, percent decrease. 
-maxredx_fl_reg_4yr <- left_join(maxredx_2m_4yr %>% 
-                              group_by(Region) %>% 
-                              summarize(mean_fl_maxredx_2m = mean(mean4yr_expFlame_2m500k),
-                                        mean_fl_500k = mean(mean4yr_expFlame_500k),
-                                        mean_fl_2m = mean(mean4yr_expFlame_2m),
-                                        mean_fl_maxredx_2m_comp = (mean_fl_2m - mean_fl_500k)) %>% 
-                              mutate(maxredx_fl_2m500k_pc = (mean_fl_2m - mean_fl_500k)/mean_fl_500k*100), 
-                            maxredx_1m_4yr %>% 
-                              group_by(Region) %>% 
-                              summarize(mean_fl_maxredx_1m = mean(mean4yr_expFlame_1m500k),
-                                        mean_fl_500k = mean(mean4yr_expFlame_500k),
-                                        mean_fl_1m = mean(mean4yr_expFlame_1m),
-                                        mean_fl_maxredx_1m_comp = (mean_fl_1m - mean_fl_500k)) %>% 
-                              mutate(maxredx_fl_1m500k_pc = (mean_fl_1m - mean_fl_500k)/mean_fl_500k*100), 
-                            by = join_by(Region))
+maxredx_fl_reg_4yr <- left_join(
+  maxredx_2m_4yr %>% 
+    group_by(Region) %>% 
+    summarize(mean_fl_maxredx_2m = mean(mean4yr_expFlame_2m500k),
+              mean_fl_500k = mean(mean4yr_expFlame_500k),
+              mean_fl_2m = mean(mean4yr_expFlame_2m),
+              mean_fl_maxredx_2m_comp = (mean_fl_2m - mean_fl_500k)) %>% 
+    mutate(maxredx_fl_2m500k_pc = (mean_fl_2m - mean_fl_500k)/mean_fl_500k*100), 
+  maxredx_1m_4yr %>% 
+    group_by(Region) %>% 
+    summarize(mean_fl_maxredx_1m = mean(mean4yr_expFlame_1m500k),
+              mean_fl_500k = mean(mean4yr_expFlame_500k),
+              mean_fl_1m = mean(mean4yr_expFlame_1m),
+              mean_fl_maxredx_1m_comp = (mean_fl_1m - mean_fl_500k)) %>% 
+    mutate(maxredx_fl_1m500k_pc = (mean_fl_1m - mean_fl_500k)/mean_fl_500k*100), 
+  by = join_by(Region))
 #maxredx_fl_reg %>% View()
 #Note: mean_fl_500k is different between these, b/c the treatment zones are
 #      different by Priority, so we are looking at a slightly different 
@@ -558,3 +560,143 @@ ggsave(plot=map_maxredx_2m,
        filename=file.path(folder_out,
                           "map_max_reduction_flame_2m500k.jpg"),
        height=7, width=8, units=c("in"))
+
+
+### 500k ------------------------------------------------------------------
+
+# 1.2 Did some Regions have significant areas where 500k intensity were relatively close to the effectiveness of the higher intensity work?
+
+# How deal with Priority and treatment types? 
+# note that 1.1 used the greatest reductions for stats and map
+# How deal with years? 
+# note that 1.1 used both treatment year snapshot and 4year average
+
+# Used 4-year average. At treatment year would show the point of largest differences between intensities
+# Separate out by Priority. 
+# Facet by treatment type? 
+
+# Maps that show all percent difference
+#  Highlight map with %diff within 5%? 10%? 
+#  *Categorize 
+
+# 500k to 1m? to 2m? 
+# Used 500k to 1m, at least initially.  
+
+res_4yr <- res_wide %>% 
+  #group by and summarize 4 years
+  group_by(Region, HUC12, Priority, TxType) %>% 
+  summarize(
+    y4_expFlame_2m500k = mean(expFlame_2m500k),
+    y4_expFlame_1m500k = mean(expFlame_1m500k),
+    y4_expFlame_2m = mean(expFlame_2m),
+    y4_expFlame_1m = mean(expFlame_1m),
+    y4_expFlame_500k = mean(expFlame_500k),
+    .groups = "drop") %>% 
+  #categorize 500k vs 1m differences
+  mutate(i500k_1m = case_when(
+    y4_expFlame_1m500k > 5 ~ "500k >5% better",
+    abs(y4_expFlame_1m500k) >= 0 & abs(y4_expFlame_1m500k) <= 5 ~ "500k within +/-5%",
+    y4_expFlame_1m500k < -5 & y4_expFlame_1m500k >= -10 ~ "1m 5%-10% better",
+    y4_expFlame_1m500k < -10 ~ "1m >10% better",
+    .default = "ERROR"),
+    #and factor
+    i500k_1m = as_factor(i500k_1m),
+    i500k_1m = forcats::fct_relevel(i500k_1m,
+                                    "500k >5% better", 
+                                    "500k within +/-5%", 
+                                    "1m 5%-10% better",
+                                    "1m >10% better")) %>% 
+  #create nice label for trt
+  mutate(trt_desc = case_when(
+    TxType == "trt1" ~ "Mod thin removal (trt1)",
+    TxType == "trt4" ~ "Heavy thinning (trt4)",
+    TxType == "trt6" ~ "Mastication (trt6)", 
+    TxType == "trt7" ~ "Prescribed fire (trt7)",
+    .default = "TRT DESC ERROR"),
+    #and factor
+    trt_desc = as_factor(trt_desc),
+    trt_desc = forcats::fct_relevel(trt_desc,
+                                    "Mod thin removal (trt1)",
+                                    "Heavy thinning (trt4)",
+                                    "Mastication (trt6)",
+                                    "Prescribed fire (trt7)"))
+
+
+### Loop for priority --------------------------------------------
+
+priorities <- res_4yr %>% pull(Priority) %>% unique() %>% sort()
+
+for (i in seq_along(priorities)){
+  
+  #this priority 
+  this_priority <- priorities[i]
+  
+  this_res_4yr <- res_4yr %>% 
+    filter(Priority == this_priority)
+  
+  #join with spatial 
+  this_hucs_4yr <- hucs_spatial %>% 
+    # SWITCH TO LEFT JOIN WHEN ALL DATA
+    # inner join to avoid NA facet since missing NC in test data
+    inner_join(this_res_4yr, 
+               by = join_by(HUC12))
+  
+  #plot map
+  this_p_500kcomp <- ggplot() + 
+    #California
+    geom_sf(data = ca, color = "grey50", fill = NA, size = 0.1) + 
+    #HUCs
+    geom_sf(data = this_hucs_4yr, 
+            #color the HUC
+            aes(fill = i500k_1m),
+            color = "grey90", size = 0.01) +
+    #regions
+    geom_sf(data = region_spatial,
+            color = "grey30", fill = NA, size = 0.1) + 
+    #use viridis color scheme
+    scale_fill_viridis("Comparing 500k to 1m\nby flame index", 
+                       option="viridis", direction=-1, 
+                       discrete=TRUE, 
+                       #dealing with NAs and labeling
+                       na.value="grey95") + 
+    #plot settings for a nicer map
+    theme_bw() +
+    theme(panel.grid = element_blank(),
+          panel.background = element_blank(),
+          legend.title = element_text(size = 11),
+          legend.text = element_text(size = 10),
+          strip.background = element_blank(),
+          strip.text = element_text(size = 13),
+          axis.text = element_text(family = "sans"),
+          legend.position = "right",
+          legend.direction = "vertical") +
+    #add a scale bar
+    ggspatial::annotation_scale(
+      location = "bl", bar_cols = c("grey50", "white")) +
+    #add a north arrow
+    ggspatial::annotation_north_arrow(
+      location = "tr", which_north = "true",
+      height = unit(0.6, "cm"), width = unit(0.6, "cm"),
+      pad_x = unit(0.2, "in"), pad_y = unit(0.3, "in"),
+      style = ggspatial::north_arrow_minimal()) +
+    #add a plot title
+    labs(title = paste0("Comparing flame index 500k intensity scenarios to 1m, ", 
+                        this_priority, 
+                        " Priority"),
+         subtitle = "Average over all years") + 
+    #facet on treatment type
+    facet_wrap(~trt_desc)
+  
+  this_fn <- paste0("map_500k1m_", this_priority, ".jpg")
+  
+  ggsave(plot=this_p_500kcomp,
+         filename=file.path(folder_out,
+                            this_fn),
+         height=6, width=12, units=c("in"))
+}
+
+# Counts
+res_4yr %>% 
+  group_by(region, Priority, TxType, i500k1m) %>% 
+  summarize(count_hucs = n())
+
