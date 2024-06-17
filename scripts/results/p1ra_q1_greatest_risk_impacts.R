@@ -696,7 +696,16 @@ for (i in seq_along(priorities)){
 }
 
 # Counts
-res_4yr %>% 
-  group_by(region, Priority, TxType, i500k1m) %>% 
-  summarize(count_hucs = n())
+count_hucs <- res_4yr %>% 
+  group_by(Region, Priority, TxType, i500k_1m) %>% 
+  summarize(count_hucs = n()) %>% 
+  #pivot wider to get trt as columns
+  pivot_wider(id_cols=c(Region, Priority, i500k_1m), 
+              names_from=TxType,
+              values_from=count_hucs) %>% 
+  rename(`500k compared to 1m` = i500k_1m)
+count_hucs
 
+write_csv(count_hucs, 
+          file.path(folder_out, 
+                    "comparing500k1m_count_hucs.csv"))
