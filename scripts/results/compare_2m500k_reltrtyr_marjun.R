@@ -16,42 +16,71 @@ pacman::p_load(
 ### User settings -------------------------------------------
 
 #percent change threshold for inversions of HaCFL
-inv_threshold <- 5
+
+
+# BROKEN FOR MAR VS JUN. FIx later if needed
+
+
+inv_threshold <- NA
 
 inv_color <- "gold"
 inv_text_color <- "gold3"
 
 ### Results import -------------------------------------------
 
-res_orig <- read_csv(file.path("results",
-                               "absolute", 
-                               "SC_absolute_20240617.csv")) %>% 
+mar <- read_csv(file.path("results",
+                          "202403_runs",
+                          "datacube", 
+                          "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
+  mutate(HUC12 = as.character(HUC12))
+
+
+jun <- read_csv(file.path("results",
+                               "datacube", 
+                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
 
 
 ### Data set up ---------------------------------------------
 
-r500k <- res_orig %>% 
+#March
+mar_r500k <- mar %>% 
   filter(TxIntensity == "500k") %>% 
-  dplyr::select(Region, HUC12, Priority, TxType, Year, HaCFL, HaCBP) %>% 
-  rename(hacfl_500k = HaCFL,
-         hacbp_500k = HaCBP)
+  dplyr::select(Region, HUC12, Priority, TxType, Year, HaCFL) %>% 
+  rename(mar_hacfl_500k = HaCFL)
 
-res_2m500k <- res_orig %>% 
+mar_2m500k <- mar %>% 
   #only 2m 
   filter(TxIntensity == "2m") %>% 
-  rename(hacfl_2m = HaCFL,
-         hacbp_2m = HaCBP) %>% 
+  rename(mar_hacfl_2m = HaCFL) %>% 
   #join with 500k for single row
-  left_join(r500k, by = join_by(Region, HUC12, Year, Priority, TxType)) %>% 
+  left_join(mar_r500k, by = join_by(Region, HUC12, Year, Priority, TxType)) %>% 
   #calculate differences (2m - 500k) / 500k * 100 as percent change
   # Inversions are POSITIVE
-  mutate(hacfl_2m500k_pc = (hacfl_2m - hacfl_500k) / hacfl_500k * 100,
-         hacbp_2m500k_pc = (hacbp_2m - hacbp_500k) / hacbp_500k * 100)
+  mutate(mar_hacfl_2m500k_pc = (mar_hacfl_2m - mar_hacfl_500k) / mar_hacfl_500k * 100) %>% 
+  #limited cols
+  dplyr::select(Region, HUC12, Year, Priority, TxType, mar_hacfl_2m500k_pc)
 
 
-#relative to treatment year
-res <- res_2m500k %>% 
+#June
+jun_r500k <- jun %>% 
+  filter(TxIntensity == "500k") %>% 
+  dplyr::select(Region, HUC12, Priority, TxType, Year, HaCFL) %>% 
+  rename(jun_hacfl_500k = HaCFL)
+
+jun_2m500k <- jun %>% 
+  #only 2m 
+  filter(TxIntensity == "2m") %>% 
+  rename(jun_hacfl_2m = HaCFL) %>% 
+  #join with 500k for single row
+  left_join(jun_r500k, by = join_by(Region, HUC12, Year, Priority, TxType)) %>% 
+  #calculate differences (2m - 500k) / 500k * 100 as percent change
+  # Inversions are POSITIVE
+  mutate(jun_hacfl_2m500k_pc = (jun_hacfl_2m - jun_hacfl_500k) / jun_hacfl_500k * 100)
+
+#join and relative to treatment year
+res_rel <- jun_2m500k %>% 
+  left_join(mar_2m500k) %>% 
   #treatment years
   separate_wider_delim(timeFire, "_", names=c("fire_trt_yr", NA)) %>% 
   separate_wider_delim(timeHybrid, "_", names=c("hybrid_trt_yr", NA)) %>% 
@@ -83,7 +112,7 @@ res <- res_2m500k %>%
 
 ### Scatter plot facets ------------------------------------------------------
 
-regions <- res %>% pull(Region) %>% unique() %>% sort()
+regions <- res_rel %>% pull(Region) %>% unique() %>% sort()
 
 #REGION (outer loop)
 for (r in seq_along(regions)){
@@ -97,12 +126,12 @@ for (r in seq_along(regions)){
     this_reg == "SN" ~ "Sierra Nevada",
   )
   
-  res_r <- res %>% 
+  res_r <- res_rel %>% 
     filter(Region == this_reg)
   
   
   #output 
-  plot_folder <- file.path('plots', 'scatter_inversions', this_reg)
+  plot_folder <- file.path('plots', 'scatter_inversions_mar_jun', this_reg)
   dir.create(plot_folder, recursive = TRUE)
   
   
@@ -121,8 +150,8 @@ for (r in seq_along(regions)){
     t1_prep <- res_r_p %>% 
       filter(!is.na(rel_tx), 
              !rel_tx == "Pretreatment") %>% 
-      mutate(x=hacbp_2m500k_pc,
-             y=hacfl_2m500k_pc,
+      mutate(x=mar_hacfl_2m500k_pc,
+             y=jun_hacfl_2m500k_pc,
              x_neg = if_else(x < 0, 1, 0),
              y_neg = if_else(y < 0, 1, 0)) %>% 
       group_by(rel_tx, TxType, x_neg, y_neg) %>% 
@@ -150,8 +179,8 @@ for (r in seq_along(regions)){
       geom_point(data = res_r_p %>% 
                    filter(!is.na(rel_tx),
                           !rel_tx == "Pretreatment"),
-                 mapping = aes(x = hacbp_2m500k_pc, 
-                               y = hacfl_2m500k_pc,
+                 mapping = aes(x = mar_hacfl_2m500k_pc, 
+                               y = jun_hacfl_2m500k_pc,
                                color = TxType),
                  shape = 1) + 
       geom_hline(yintercept = 0) + 
@@ -161,8 +190,8 @@ for (r in seq_along(regions)){
                   "Priority: ", this_priority),
            subtitle = "Facets by treatment type and relative year to treatment",
            caption = "Positive values are INVERSIONS where 2m is worse than 500k",
-           y = "HaCFL fraction change: (2m-500k)/500k*100",
-           x = "HaCBP fraction change: (2m-500k)/500k*100") + 
+           y = "JUNE HaCFL: (2m-500k)/500k*100",
+           x = "MARCH HaCFL: (2m-500k)/500k*100") + 
       facet_wrap(~rel_tx + TxType, dir="v") + 
       geom_label(data=t_r,
                  mapping=aes(label=count, x=max_x, y=max_y), 
@@ -179,7 +208,7 @@ for (r in seq_along(regions)){
       theme_bw() + 
       theme(aspect.ratio = 1)
     
-    fn <- paste0(this_reg, '_', this_priority, '_HaCFLvsHaCBP_inversions.jpg')
+    fn <- paste0(this_reg, '_', this_priority, '_HaCFL_inversions_marjun.jpg')
     
     ggsave(plot = p_inv,
            filename = file.path(plot_folder, fn),
@@ -197,12 +226,13 @@ for (r in seq_along(regions)){
         rename(count_nothresh = count) %>% 
         left_join(res_r_p %>%
                     #threshold
-                    filter(hacfl_2m500k_pc >= inv_threshold) %>% 
+                    filter(jun_hacfl_2m500k_pc >= inv_threshold |
+                             mar_hacfl_2m500k_pc >= inv_threshold) %>% 
                     #regular set up
                     filter(!is.na(rel_tx), 
                            !rel_tx == "Pretreatment") %>% 
-                    mutate(x=hacbp_2m500k_pc,
-                           y=hacfl_2m500k_pc,
+                    mutate(x=mar_hacfl_2m500k_pc,
+                           y=jun_hacfl_2m500k_pc,
                            x_neg = if_else(x < 0, 1, 0),
                            y_neg = if_else(y < 0, 1, 0)) %>% 
                     group_by(rel_tx, TxType, x_neg, y_neg) %>% 
@@ -223,7 +253,8 @@ for (r in seq_along(regions)){
       p_inv_thresh <- ggplot() + 
         #non threshold inversion points, colors
         geom_point(data = res_r_p %>% 
-                     filter(hacfl_2m500k_pc < inv_threshold) %>% 
+                     filter(mar_hacfl_2m500k_pc < inv_threshold,
+                            jun_hacfl_2m500k_pc) %>% 
                      filter(!is.na(rel_tx),
                             !rel_tx == "Pretreatment"),
                    mapping = aes(x = hacbp_2m500k_pc, 
@@ -233,11 +264,12 @@ for (r in seq_along(regions)){
         #threshold points, highlighted
         geom_point(data = res_r_p %>% 
                      #threshold
-                     filter(hacfl_2m500k_pc >= inv_threshold) %>% 
+                     filter(jun_hacfl_2m500k_pc >= inv_threshold |
+                              mar_hacfl_2m500k_pc >= inv_threshold) %>% 
                      filter(!is.na(rel_tx),
                             !rel_tx == "Pretreatment"),
-                   mapping = aes(x = hacbp_2m500k_pc, 
-                                 y = hacfl_2m500k_pc),
+                   mapping = aes(x = mar_hacfl_2m500k_pc, 
+                                 y = jun_hacfl_2m500k_pc),
                    shape = 1,
                    color = inv_color) + 
         geom_hline(yintercept = 0) + 
@@ -249,8 +281,8 @@ for (r in seq_along(regions)){
                             "Priority: ", this_priority),
              subtitle = "Facets by treatment type and relative year to treatment",
              caption = paste0("Positive values are INVERSIONS where 2m is worse than 500k.\nHighlighted points are above the HaCFL inversion threshold, ", inv_threshold, "%.\nCounts are of HaCFL inversions above threshold ONLY."),
-             y = "HaCFL fraction change: (2m-500k)/500k*100",
-             x = "HaCBP fraction change: (2m-500k)/500k*100") + 
+             y = "JUNE HaCFL: (2m-500k)/500k*100",
+             x = "MARCHj HaCFL: (2m-500k)/500k*100") + 
         facet_wrap(~rel_tx + TxType, dir="v") + 
         geom_label(data=t_r,
                    mapping=aes(label=count, x=max_x, y=max_y), 
@@ -272,7 +304,7 @@ for (r in seq_along(regions)){
         theme(aspect.ratio = 1)
       
       fn_thresh <- paste0(this_reg, "_", this_priority, 
-                          "_HaCFLvsHaCBP_inversions", 
+                          "_HaCFL_inversions_marjun", 
                           "_above_", inv_threshold, 
                           ".jpg")
        

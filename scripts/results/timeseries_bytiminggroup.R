@@ -36,11 +36,9 @@ graph_sample <- TRUE
 # can change between region-only and full datacubes. 
 # will overwrite output
 res_orig <- read_csv(file.path("results",
-                               "202403_runs",
                                "datacube", 
-                               "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12)) %>% 
-  filter(Region == "SC")
+                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
+  mutate(HUC12 = as.character(HUC12)) 
 
 #new set, 3 from each of the top three timing groups for each priority for each region
 # uses the qualifying HUCs from original sample plus new ones
@@ -512,7 +510,7 @@ for (r in seq_along(regions)){
                               ", Treatment: ", this_trt,
                               " for Selected HUCs"),
                subtitle = "Facets by HUC showing Year of Treatment",
-               y = "Flame index (expFlame)") + 
+               y = "Burn fraction by fire type") + 
           theme_bw()
         
         fn16 <- paste0("sampledhucs_", this_reg, "_", this_priority, "_", this_trt, 

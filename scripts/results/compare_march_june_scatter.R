@@ -38,13 +38,9 @@ mar <- read_csv(file.path("results",
 
 #June run (TBD)
 jun <- read_csv(file.path("results",
-                          "202403_runs",
                           "datacube", 
-                          "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12)) %>% 
-  #pretend strip out baseline
-  filter(!Priority == "baseline", 
-         !Priority == "baseweather")
+                          "datacube_interim_SNSCCC_20240617.csv")) %>% 
+  mutate(HUC12 = as.character(HUC12)) 
 
 
 if (only_nonburn){nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS")}
@@ -189,6 +185,10 @@ for (r in seq_along(regions)){
              y = "June HaCFL") + 
         theme_bw() + 
         theme(aspect.ratio = 1) + 
+        coord_cartesian(xlim=c(0, max(c(res_r_p_t[["HaCFL_jun"]],
+                                   res_r_p_t[["HaCFL_mar"]]))),
+                        ylim=c(0, max(c(res_r_p_t[["HaCFL_jun"]],
+                                   res_r_p_t[["HaCFL_mar"]])))) + 
         facet_wrap(~rel_tx)
       
       #hacbp
@@ -204,6 +204,10 @@ for (r in seq_along(regions)){
              y = "June HaCBP") + 
         theme_bw() + 
         theme(aspect.ratio = 1) + 
+        coord_cartesian(xlim=c(0, max(c(res_r_p_t[["HaCBP_jun"]],
+                                        res_r_p_t[["HaCBP_mar"]]))),
+                        ylim=c(0, max(c(res_r_p_t[["HaCBP_jun"]],
+                                        res_r_p_t[["HaCBP_mar"]])))) + 
         facet_wrap(~rel_tx)
       
       #active_crown
@@ -219,6 +223,10 @@ for (r in seq_along(regions)){
              y = "June active crown") + 
         theme_bw() + 
         theme(aspect.ratio = 1) + 
+        coord_cartesian(xlim=c(0, max(c(res_r_p_t[["active_crown_jun"]],
+                                        res_r_p_t[["active_crown_mar"]]))),
+                        ylim=c(0, max(c(res_r_p_t[["active_crown_jun"]],
+                                        res_r_p_t[["active_crown_mar"]])))) + 
         facet_wrap(~rel_tx)
       
       #expFlame
@@ -234,6 +242,10 @@ for (r in seq_along(regions)){
              y = "June expFlame") + 
         theme_bw() + 
         theme(aspect.ratio = 1) + 
+        coord_cartesian(xlim=c(0, max(c(res_r_p_t[["expFlame_jun"]],
+                                        res_r_p_t[["expFlame_mar"]]))),
+                        ylim=c(0, max(c(res_r_p_t[["expFlame_jun"]],
+                                        res_r_p_t[["expFlame_mar"]])))) + 
         facet_wrap(~rel_tx)
       
       #expBurn
@@ -249,6 +261,10 @@ for (r in seq_along(regions)){
              y = "June expBurn") + 
         theme_bw() + 
         theme(aspect.ratio = 1) + 
+        coord_cartesian(xlim=c(0, max(c(res_r_p_t[["expBurn_jun"]],
+                                        res_r_p_t[["expBurn_mar"]]))),
+                        ylim=c(0, max(c(res_r_p_t[["expBurn_jun"]],
+                                        res_r_p_t[["expBurn_mar"]])))) + 
         facet_wrap(~rel_tx)
       
       #expPcActive
@@ -264,6 +280,10 @@ for (r in seq_along(regions)){
              y = "June expPcActive") + 
         theme_bw() + 
         theme(aspect.ratio = 1) + 
+        coord_cartesian(xlim=c(0, max(c(res_r_p_t[["expPcActive_jun"]],
+                                        res_r_p_t[["expPcActive_mar"]]))),
+                        ylim=c(0, max(c(res_r_p_t[["expPcActive_jun"]],
+                                        res_r_p_t[["expPcActive_mar"]])))) + 
         facet_wrap(~rel_tx)
       
 
