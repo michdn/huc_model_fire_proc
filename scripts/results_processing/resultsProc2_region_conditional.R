@@ -11,7 +11,7 @@ pacman::p_load(
 
 #region or folder name for variants/reruns #"SC", "SCbl", "SCbw", etc. 
 # for baseline/baseweather, make sure to align with settings below
-reg_code <- "SN"
+reg_code <- "CC"
 
 #Include FVS or not?
 # interim datasets may be created before FVS summary data available 

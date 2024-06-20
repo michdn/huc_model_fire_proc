@@ -13,19 +13,20 @@ pacman::p_load(
 ### User settings ---------------------------------------------
 
 #which region to run right now
-reg_code <- "SN"
+reg_code <- "CC"
 
 #their conditional metric file names, to be selected based on reg_code
 reg_files <- c(
-  "SN" = "SN_conditional_20240529.csv",
-  "SC" = "SC_conditional_20240529.csv",
-  "CC" = "CC_conditional_20240529.csv", 
-  "NC" = "NC_conditional_20240529.csv")
+  "SN" = "SN_conditional_20240617.csv",
+  "SC" = "SC_conditional_20240617.csv",
+  "CC" = "CC_conditional_20240617.csv", 
+  "NC" = "NC_conditional_202406xx.csv")
 this_reg_file <- reg_files[[reg_code]]
 
 
 # for optional baseline/baseweather inclusion
 use_bl <- FALSE
+
 if (use_bl){
   bl_files <- c(
     "SN" = "SNbl_conditional_202406xx.csv",
@@ -36,6 +37,7 @@ if (use_bl){
 }
 #optional baseweather inclusion
 use_bw <- FALSE
+
 if (use_bw){
   bw_files <- c(
     "SN" = "SNbw_conditional_202406xx.csv",
@@ -141,9 +143,9 @@ hucs_abp <- sum_abp %>%
 
 head(hucs_abp)
 
-# write_csv(hucs_abp,
-#           file.path('results',
-#                     'hucs_abp_sn_20240403.csv'))
+saveRDS(hucs_abp,
+          file.path(output_folder,
+                    paste0("abp_", reg_code, ".RDS")))
 
 
 ### base HaCBP, calc weights -------------------------------------------

@@ -37,14 +37,15 @@ split_rename_run <- function(df){
 rm_gc_big <- FALSE
 
 # where to find the sql output files
-# NC, SC, SN, CC
+# SN, SC, CC, NC
 # reg_group is just the name of the folder, so things like e.g. SCbl work 
-reg_group <- "SN" 
+reg_group <- "CC" 
 
 
 results_folder <- file.path("R:",
                             "rem",
-                            "MAS_gridfire_outputs2",
+                            "MAS_gridfire_outputs",
+                            "jun24b",
                             reg_group)
 
 
