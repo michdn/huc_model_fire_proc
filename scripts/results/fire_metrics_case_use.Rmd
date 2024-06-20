@@ -36,14 +36,17 @@ Initially, we will select a single year, 2039, to explore.
 
 ```{r hiddenresimport, include=FALSE, echo=FALSE}
 #run but not show
-res_orig <- read_csv(file.path("..", "..",
+res_orig <- read_csv(file.path("..",
+                               "..",
                                "results",
-                               "202403_runs",
                                "datacube", 
-                               "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
+                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) %>% 
-  filter(Region %in% c("SC", "CC"),
-         !Priority %in% c("baseline", "baseweather"))
+  filter(Region %in% c("SC", "CC"))
+
+#plot dimensions for priority + txtype facets
+pt_width <- 6
+pt_height <- 7
 
 ```
 
@@ -105,9 +108,9 @@ res2039_jt <- res2039_500k %>%
 #selecting only the relevant fields for convenience
 res2039_trim <- res2039_jt %>% 
   dplyr::select(HUC12, Region, Priority, TxType, 
-         expBurn_500k, expBurn_2m,
-         expFlame_500k, expFlame_2m,
-         expAcf_500k, expAcf_2m)
+                expBurn_500k, expBurn_2m,
+                expFlame_500k, expFlame_2m,
+                expAcf_500k, expAcf_2m)
 
 ```
 
@@ -116,13 +119,12 @@ Now suppose we are interested in comparing the 500k intensity and 2.3 million in
 The x-axis is the expBurn value of the 500k intensity for each HUC-priority-type combination, and the y-axis would be the expBurn for the matching HUC-priority-type combination for the 2.3 million intensity level. Adding a 1:1 relationship line visually shows where the expBurn values are equal (i.e. the treatment intensity change did not have an effect). Adding a trend line (linear regression) of the observed expBurn values would show if the increase in intensity caused a change in expBurn values - when the slope of the trend line is less than the 1:1 relationship, the increase in intensity caused a decrease in expBurn. 
 
 
-```{r overall}
+```{r overall, out.width="75%"}
 #overall expBurn
 plot_yr2039_expBurn_overall <- ggplot() + 
   geom_point(data=res2039_trim, 
              aes(x=expBurn_500k, y=expBurn_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1) + 
   stat_smooth(data=res2039_trim,
               aes(x=expBurn_500k, y=expBurn_2m),
@@ -134,7 +136,8 @@ plot_yr2039_expBurn_overall <- ggplot() +
   labs(title="Year 2039: Expected Burned Acres",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_expBurn_overall
 
 #overall expFlame
@@ -142,7 +145,6 @@ plot_yr2039_expFlame_overall <- ggplot() +
   geom_point(data=res2039_trim, 
              aes(x=expFlame_500k, y=expFlame_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1) + 
   stat_smooth(data=res2039_trim,
               aes(x=expFlame_500k, y=expFlame_2m),
@@ -154,24 +156,24 @@ plot_yr2039_expFlame_overall <- ggplot() +
   labs(title="Year 2039: Flame Index",
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") + 
-  theme_bw()
+  theme_bw() +
+  theme(aspect.ratio = 1)
 plot_yr2039_expFlame_overall
 
 ```
 
 We see that in 2039, increasing the intensity does reduce expBurn and expFlame overall (the blue trend line slope is less than the black 1:1 relationship line).
 
-There are many factors that we would like to consider, and we can begin to separate out plots to look at different aspects. The above plot includes all regions, all priorities, and all treatment types.
+There are many factors that we would like to consider, and we can begin to separate out plots to look at different aspects. The above plot includes multiple regions (SC and CC here), all priorities, and all treatment types.
 
 For example, this is the same expBurn and expFlame plots as above, but faceted (grouped and separated) by region.
 
-```{r region}
+```{r region, out.width="75%"}
 #region
 plot_yr2039_expBurn_reg <- ggplot() +
   geom_point(data=res2039_trim,
              aes(x=expBurn_500k, y=expBurn_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) +
   geom_abline(intercept=0, slope=1) +
   stat_smooth(data=res2039_trim,
               aes(x=expBurn_500k, y=expBurn_2m),
@@ -184,14 +186,14 @@ plot_yr2039_expBurn_reg <- ggplot() +
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region) + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_expBurn_reg
 
 plot_yr2039_expFlame_reg <- ggplot() +
   geom_point(data=res2039_trim,
              aes(x=expFlame_500k, y=expFlame_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) +
   geom_abline(intercept=0, slope=1) +
   stat_smooth(data=res2039_trim,
               aes(x=expFlame_500k, y=expFlame_2m),
@@ -204,7 +206,8 @@ plot_yr2039_expFlame_reg <- ggplot() +
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Region) + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_expFlame_reg
 
 
@@ -212,12 +215,11 @@ plot_yr2039_expFlame_reg
 
 For example, this is the same expBurn and expFlame plots as above, but faceted (grouped and separated) by priority and treatment type. 
 
-```{r prioritytype}
+```{r prioritytype, fig.width=pt_width, fig.height=pt_height, out.width="80%"}
 plot_yr2039_expBurn_pt <- ggplot() + 
   geom_point(data=res2039_trim, 
              aes(x=expBurn_500k, y=expBurn_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1) + 
   stat_smooth(data=res2039_trim,
               aes(x=expBurn_500k, y=expBurn_2m),
@@ -230,14 +232,14 @@ plot_yr2039_expBurn_pt <- ggplot() +
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType) + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_expBurn_pt
 
 plot_yr2039_expFlame_pt <- ggplot() + 
   geom_point(data=res2039_trim, 
              aes(x=expFlame_500k, y=expFlame_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1) + 
   stat_smooth(data=res2039_trim,
               aes(x=expFlame_500k, y=expFlame_2m),
@@ -250,7 +252,8 @@ plot_yr2039_expFlame_pt <- ggplot() +
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType) + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_expFlame_pt
 
 ```
@@ -268,12 +271,11 @@ res2039sc <- res2039_trim %>%
 
 And then we can repeat our graphing, perhaps for both priority and treatment type. 
 
-```{r scpt}
+```{r scpt, fig.width=pt_width, fig.height=pt_height, out.width="80%"}
 plot_yr2039_sc_expBurn_pt <- ggplot() + 
   geom_point(data=res2039sc, 
              aes(x=expBurn_500k, y=expBurn_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1) + 
   stat_smooth(data=res2039sc,
               aes(x=expBurn_500k, y=expBurn_2m),
@@ -286,14 +288,14 @@ plot_yr2039_sc_expBurn_pt <- ggplot() +
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType) + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_sc_expBurn_pt
 
 plot_yr2039_sc_expFlame_pt <- ggplot() + 
   geom_point(data=res2039sc, 
              aes(x=expFlame_500k, y=expFlame_2m),
              shape=1, color="blue") +
-  theme(aspect.ratio = 1) + 
   geom_abline(intercept=0, slope=1) + 
   stat_smooth(data=res2039sc,
               aes(x=expFlame_500k, y=expFlame_2m),
@@ -306,7 +308,8 @@ plot_yr2039_sc_expFlame_pt <- ggplot() +
        x="500k Acres Treated",
        y="2.3 Million Acres Treated") +
   facet_wrap(~Priority+TxType) + 
-  theme_bw()
+  theme_bw() + 
+  theme(aspect.ratio = 1)
 plot_yr2039_sc_expFlame_pt
 ```
 
@@ -314,7 +317,7 @@ plot_yr2039_sc_expFlame_pt
 
 Joint distribution plots are convenient for comparing two aspects against each other, but we can also graph some of the same information in different ways. To avoid too cluttered of charts, we may need to partition the dataset in some fashion (filtering or faceting). 
 
-```{r scboxplot}
+```{r scboxplot, out.width="75%"}
 
 # Returning to original 2039 dataset
 r39sc <- res2039 %>% 
@@ -328,18 +331,17 @@ r39sc <- res2039 %>%
 ggplot() +
   geom_boxplot(data=r39sc,
                mapping=aes(x=scenario_intensity_type, y=expBurn)) +
-    labs(title="SC: Year 2039: Expected Burned Acres per HUC",
+  labs(title="SC: Year 2039: Expected Burned Acres per HUC",
        x="Intensity - Treatment Type",
        y="Expected burned acres") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
-  facet_wrap(~Priority) + 
-  theme_bw()
-  
+  facet_wrap(~Priority) 
+
 ggplot() +
   geom_boxplot(data=r39sc,
                mapping=aes(x=scenario_intensity_type, y=expFlame)) +
-    labs(title="SC: Year 2039: Flame Index per HUC",
+  labs(title="SC: Year 2039: Flame Index per HUC",
        x="Intensity - Treatment Type",
        y="Expected total flame index") +
   theme_bw() +
@@ -352,7 +354,7 @@ ggplot() +
 
 Instead of individual HUC points, we may wish to add all burned area together, region-wide.
 
-```{r scbargraph}
+```{r scbargraph, out.width="75%"}
 
 r39sc_summarized <- r39sc %>% 
   group_by(Priority, TxIntensity, TxType) %>% 
@@ -363,8 +365,8 @@ r39sc_summarized <- r39sc %>%
 
 ggplot() +
   geom_col(data=r39sc_summarized,
-               mapping=aes(x=intensity_type, y=sum_expBurn)) +
-    labs(title="SC: Year 2039: Total Expected Burned Acres",
+           mapping=aes(x=intensity_type, y=sum_expBurn)) +
+  labs(title="SC: Year 2039: Total Expected Burned Acres",
        x="Intensity - Treatment Type",
        y="Total expected burned acres") +
   theme_bw() +
@@ -376,7 +378,7 @@ ggplot() +
 
 Or reworking the summarizing and faceting, here is another way to view the same information. 
 
-```{r scbar2}
+```{r scbar2, fig.width=pt_width, fig.height=pt_height, out.width="80%"}
 r39sc_sum2 <- r39sc %>% 
   group_by(Priority, TxIntensity, TxType) %>% 
   summarize(sum_expBurn = sum(expBurn),
@@ -384,8 +386,8 @@ r39sc_sum2 <- r39sc %>%
 
 ggplot() +
   geom_col(data=r39sc_sum2,
-               mapping=aes(x=TxIntensity, y=sum_expBurn)) +
-    labs(title="SC: Year 2039: Total Expected Burned Acres",
+           mapping=aes(x=TxIntensity, y=sum_expBurn)) +
+  labs(title="SC: Year 2039: Total Expected Burned Acres",
        x="Intensity",
        y="Total expected burned acres") +
   theme_bw() +
@@ -413,7 +415,7 @@ trt_desc <- case_when(
   this_trt == "trt6" ~ "Heavy Mastication", 
   this_trt == "trt7" ~ "Prescribed fire",
   .default = "Type not found") 
-  
+
 #We return to our results (res) before filtering on the year, 
 # and filter to the selected
 res_example <- res %>% 
@@ -441,7 +443,7 @@ year_breaks <- c(2024, 2029, 2034, 2039)
 
 We will plot boxplots with the year along the x-axis and different metrics (expBurn and expFlame) on the y-axis. The graphs will facet on intensity and timing group. 
 
-```{r tsplots}
+```{r tsplots, out.width="80%"}
 
 # Note: the scales can either be fixed across all facets, or set per panel.
 #  Fixed is nice that all axes are the same, but if there are large differences
@@ -469,13 +471,14 @@ ggplot() +
   theme_bw()
 
 ```
+
 In the graphs above, the columns of graphs are the different timing groups (when that HUC was treated). The first column are HUCs that were treated in 2024. In their time series, you can see that the fire metrics start off the lowest in 2024, and increase as time passes. The second column was treated in 2029, and we can see the decrease in fire metrics in the 2029 boxplot of their time series.
 
-## Timeseries (Line graphs)
+## Time series (Line graphs)
 
-We can also look at a timeseries of the average of all HUCs (irrespective of timing group). In the example below, we have selected a region and treatment type, and will show timeseries linegraphs by priority (color) and intensity (line type). This way, we can somewhat compare scenarios of the same treatment type against each other. 
+We can also look at a time series of the average of all HUCs (irrespective of timing group). In the example below, we have selected a region and treatment type, and will show time series line graphs by priority (color) and intensity (line type). This way, we can somewhat compare scenarios of the same treatment type against each other. 
 
-```{r tsline}
+```{r tsline, out.width="75%"}
 
 #Select an example trt
 this_region <- "SC"
@@ -488,7 +491,7 @@ trt_desc <- case_when(
   this_trt == "trt6" ~ "Heavy Mastication", 
   this_trt == "trt7" ~ "Prescribed fire",
   .default = "Type not found") 
-  
+
 #We return to our results (res) before filtering on the year, 
 # and filter to the selected
 res_exline <- res %>% 
@@ -523,7 +526,7 @@ Here we can see that, in general, the 2m intensity treatments are better than 1m
 
 Similar graphs could be done by switching treatment type and priority around, such that for a particular priority, you can compare all treatment types and intensities. 
 
-Note that this is collapsing all HUCs (averaging) so we may not be seeing the variability of the HUCs within a scenario. We also may want to factor in treatment timing in more detailed analyses as well.  
+Note that this is collapsing all HUCs (averaging) so we are not seeing the variability of the HUCs within a scenario. We also may want to factor in treatment timing in more detailed analyses as well.  
 
 
 ## Maps and Best Scenarios
@@ -532,8 +535,8 @@ It is also possible to join the datacube data with spatial data to create maps. 
 
 ```{r hiddenspatialread, include=FALSE, echo=FALSE}
 hucs_spatial <- st_read(file.path("..", "..", 
-                              "results", "spatial", 
-                              "huc12_watersheds.gpkg"))
+                                  "results", "spatial", 
+                                  "huc12_watersheds.gpkg"))
 ```
 
 ```{r spatialread, eval=FALSE}
@@ -569,7 +572,7 @@ res <- res %>%
 
 ```
 
-In this case, we will look at a VERY simplified example of the average flame index (expFlame) over all years (2024, 2029, 2034, 2039). We will group our data by HUC and scenario (and notably not Year), then summarize to calculate the mean of expFlame. Then we arrange our dataset by the mean of expFlame and take the first (lowest) value per HUC12. This leaves us with a single row per HUC of the scenario that produced the lowest flame index for that HUC. 
+In this case, we will look at a simplified example of the average flame index (expFlame) over all years (2024, 2029, 2034, 2039). We will group our data by HUC and scenario (and notably not Year), then summarize to calculate the mean of expFlame. Then we arrange our dataset by the mean of expFlame and take the first (lowest) value per HUC12. This leaves us with a single row per HUC of the scenario that produced the lowest flame index for that HUC. 
 
 ```{r lowestflame}
 
@@ -586,10 +589,8 @@ res_ave <- res %>%
 lowest_flame <- res_ave %>% 
   #by HUC
   group_by(HUC12) %>% 
-  #lowest value first
-  arrange(mean_expFlame) %>% 
-  #take first
-  slice(1)
+  #take lowest
+  slice_min(order_by=mean_expFlame, n=1)
 
 ```
 
@@ -632,13 +633,13 @@ Then we can join our spatial data to our lowest flame index dataset and prepare 
 # Otherwise, a left_join is the standard function used here. 
 hucs_lowest <- hucs_spatial %>% 
   inner_join(lowest_flame,
-            by = join_by("HUC12"))
+             by = join_by("HUC12"))
 
 ```
 
 We can map using R, as in the example below, but you may also wish to save the new spatial dataset to map in QGIS, ESRI ArcGIS, or other GIS software. 
 
-```{r bestmap}
+```{r bestmap, fig.width=11, fig.height=9, out.width="100%"}
 
 plot_best <- ggplot() +
   #California
