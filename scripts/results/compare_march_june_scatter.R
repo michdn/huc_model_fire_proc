@@ -18,7 +18,7 @@ pacman::p_load(
 ### User settings ---------------------------------------------
 
 # Flag for nonburn issue HUCs only
-only_nonburn <- FALSE
+only_nonburn <- TRUE
 
 # Also save HaCFL as single larger jpgs
 save_hacfl <- TRUE
@@ -36,11 +36,11 @@ mar <- read_csv(file.path("results",
                           "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-#June run (TBD)
+#June run 
 jun <- read_csv(file.path("results",
                           "datacube", 
                           "datacube_interim_SNSCCC_20240617.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12)) 
+  mutate(HUC12 = as.character(HUC12))
 
 
 if (only_nonburn){nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS")}
@@ -281,9 +281,11 @@ for (r in seq_along(regions)){
         theme_bw() + 
         theme(aspect.ratio = 1) + 
         coord_cartesian(xlim=c(0, max(c(res_r_p_t[["expPcActive_jun"]],
-                                        res_r_p_t[["expPcActive_mar"]]))),
+                                        res_r_p_t[["expPcActive_mar"]]),
+                                      na.rm=TRUE)),
                         ylim=c(0, max(c(res_r_p_t[["expPcActive_jun"]],
-                                        res_r_p_t[["expPcActive_mar"]])))) + 
+                                        res_r_p_t[["expPcActive_mar"]]),
+                                      na.rm=TRUE))) + 
         facet_wrap(~rel_tx)
       
 

@@ -24,8 +24,8 @@ inv_text_color <- "gold3"
 ### Results import -------------------------------------------
 
 res_orig <- read_csv(file.path("results",
-                               "absolute", 
-                               "SC_absolute_20240617.csv")) %>% 
+                               "datacube", 
+                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
 
 
@@ -33,21 +33,21 @@ res_orig <- read_csv(file.path("results",
 
 r500k <- res_orig %>% 
   filter(TxIntensity == "500k") %>% 
-  dplyr::select(Region, HUC12, Priority, TxType, Year, HaCFL, HaCBP) %>% 
+  dplyr::select(Region, HUC12, Priority, TxType, Year, HaCFL, expFlame) %>% 
   rename(hacfl_500k = HaCFL,
-         hacbp_500k = HaCBP)
+         expFlame_500k = expFlame)
 
 res_2m500k <- res_orig %>% 
   #only 2m 
   filter(TxIntensity == "2m") %>% 
   rename(hacfl_2m = HaCFL,
-         hacbp_2m = HaCBP) %>% 
+         expFlame_2m = expFlame) %>% 
   #join with 500k for single row
   left_join(r500k, by = join_by(Region, HUC12, Year, Priority, TxType)) %>% 
   #calculate differences (2m - 500k) / 500k * 100 as percent change
   # Inversions are POSITIVE
   mutate(hacfl_2m500k_pc = (hacfl_2m - hacfl_500k) / hacfl_500k * 100,
-         hacbp_2m500k_pc = (hacbp_2m - hacbp_500k) / hacbp_500k * 100)
+         expFlame_2m500k_pc = (expFlame_2m - expFlame_500k) / expFlame_500k * 100)
 
 
 #relative to treatment year
@@ -121,7 +121,7 @@ for (r in seq_along(regions)){
     t1_prep <- res_r_p %>% 
       filter(!is.na(rel_tx), 
              !rel_tx == "Pretreatment") %>% 
-      mutate(x=hacbp_2m500k_pc,
+      mutate(x=expFlame_2m500k_pc,
              y=hacfl_2m500k_pc,
              x_neg = if_else(x < 0, 1, 0),
              y_neg = if_else(y < 0, 1, 0)) %>% 
@@ -150,7 +150,7 @@ for (r in seq_along(regions)){
       geom_point(data = res_r_p %>% 
                    filter(!is.na(rel_tx),
                           !rel_tx == "Pretreatment"),
-                 mapping = aes(x = hacbp_2m500k_pc, 
+                 mapping = aes(x = expFlame_2m500k_pc, 
                                y = hacfl_2m500k_pc,
                                color = TxType),
                  shape = 1) + 
@@ -162,7 +162,7 @@ for (r in seq_along(regions)){
            subtitle = "Facets by treatment type and relative year to treatment",
            caption = "Positive values are INVERSIONS where 2m is worse than 500k",
            y = "HaCFL fraction change: (2m-500k)/500k*100",
-           x = "HaCBP fraction change: (2m-500k)/500k*100") + 
+           x = "expFlame fraction change: (2m-500k)/500k*100") + 
       facet_wrap(~rel_tx + TxType, dir="v") + 
       geom_label(data=t_r,
                  mapping=aes(label=count, x=max_x, y=max_y), 
@@ -179,7 +179,7 @@ for (r in seq_along(regions)){
       theme_bw() + 
       theme(aspect.ratio = 1)
     
-    fn <- paste0(this_reg, '_', this_priority, '_HaCFLvsHaCBP_inversions.jpg')
+    fn <- paste0(this_reg, '_', this_priority, '_expFlamevsHaCBP_inversions.jpg')
     
     ggsave(plot = p_inv,
            filename = file.path(plot_folder, fn),
@@ -201,7 +201,7 @@ for (r in seq_along(regions)){
                     #regular set up
                     filter(!is.na(rel_tx), 
                            !rel_tx == "Pretreatment") %>% 
-                    mutate(x=hacbp_2m500k_pc,
+                    mutate(x=expFlame_2m500k_pc,
                            y=hacfl_2m500k_pc,
                            x_neg = if_else(x < 0, 1, 0),
                            y_neg = if_else(y < 0, 1, 0)) %>% 
@@ -226,7 +226,7 @@ for (r in seq_along(regions)){
                      filter(hacfl_2m500k_pc < inv_threshold) %>% 
                      filter(!is.na(rel_tx),
                             !rel_tx == "Pretreatment"),
-                   mapping = aes(x = hacbp_2m500k_pc, 
+                   mapping = aes(x = expFlame_2m500k_pc, 
                                  y = hacfl_2m500k_pc,
                                  color = TxType),
                    shape = 1) + 
@@ -236,7 +236,7 @@ for (r in seq_along(regions)){
                      filter(hacfl_2m500k_pc >= inv_threshold) %>% 
                      filter(!is.na(rel_tx),
                             !rel_tx == "Pretreatment"),
-                   mapping = aes(x = hacbp_2m500k_pc, 
+                   mapping = aes(x = expFlame_2m500k_pc, 
                                  y = hacfl_2m500k_pc),
                    shape = 1,
                    color = inv_color) + 
@@ -250,7 +250,7 @@ for (r in seq_along(regions)){
              subtitle = "Facets by treatment type and relative year to treatment",
              caption = paste0("Positive values are INVERSIONS where 2m is worse than 500k.\nHighlighted points are above the HaCFL inversion threshold, ", inv_threshold, "%.\nCounts are of HaCFL inversions above threshold ONLY."),
              y = "HaCFL fraction change: (2m-500k)/500k*100",
-             x = "HaCBP fraction change: (2m-500k)/500k*100") + 
+             x = "expFlame fraction change: (2m-500k)/500k*100") + 
         facet_wrap(~rel_tx + TxType, dir="v") + 
         geom_label(data=t_r,
                    mapping=aes(label=count, x=max_x, y=max_y), 
@@ -272,7 +272,7 @@ for (r in seq_along(regions)){
         theme(aspect.ratio = 1)
       
       fn_thresh <- paste0(this_reg, "_", this_priority, 
-                          "_HaCFLvsHaCBP_inversions", 
+                          "_expFlamevsHaCBP_inversions", 
                           "_above_", inv_threshold, 
                           ".jpg")
        
@@ -287,5 +287,14 @@ for (r in seq_along(regions)){
 } # end region
 
 
+### qa pull  ----------------------------------------------
 
-
+res %>%
+  dplyr::filter(hacfl_2m500k_pc > 100) %>%
+  select(Region, HUC12) %>%
+  distinct()
+  #write_csv(file = "qajun/extreme_inversion_185.csv")
+# #100%: 14, SN(10), CC(3), SC(1)
+# #150%: 10
+# #200%: 8
+# #185: 9
