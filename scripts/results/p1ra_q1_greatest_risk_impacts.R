@@ -34,15 +34,18 @@ dir.create(folder_out, recursive = TRUE)
 
 ### Data import -------------------------------------------
 #+ import, echo=FALSE
+
 res_orig <- read_csv(file.path("results",
-                               "202403_runs",
                                "datacube", 
-                               "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
-  #no baselines here/now
-  filter(Priority %in% c("Fire", "WUI", "Hybrid")) %>% 
-  #fix exception case (will be fixed in future absolute script runs)
-  mutate(across(c(expPcSurface, expPcPassive, expPcActive), ~ replace_na(., 0))) %>% 
+                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
+#fix exception case (will be fixed in future absolute script runs)
+#  mutate(across(c(expPcSurface, expPcPassive, expPcActive), ~ replace_na(., 0))) 
+
+# #SN only for special meeting
+# res_orig <- res_orig %>% 
+#   dplyr::filter(Region == "SN")
+
 
 #spatial
 hucs_spatial <- st_read("data/data_huc/TxHucsTimingGroups.shp") %>% 
@@ -142,7 +145,8 @@ risk_sum_tbl <- fl_mean_500k %>%
 
 # map risk (mean expFlame)
 hucs_fl_mean_500k <- hucs_spatial %>% 
-  left_join(fl_mean_500k, by = join_by(HUC12))
+  #SWITCH TO LEFT LATER
+  inner_join(fl_mean_500k, by = join_by(HUC12))
 
 plot_risk_overall_flame <- ggplot() +
   #California
@@ -511,6 +515,7 @@ ggsave(plot=grid.arrange(top=redx_title, redx_grob),
 
 ## map maxredx 2m
 hucs_maxredx_2m <- hucs_spatial %>% 
+  # SWITCH INNER TO LEFT FOR ALL DATA
   left_join(maxredx_2m_4yr %>% 
               mutate(pc_redx = mean4yr_expFlame_2m500k/mean4yr_expFlame_500k*100), 
             by = join_by(HUC12))
