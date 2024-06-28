@@ -13,14 +13,14 @@ pacman::p_load(
 ### User settings ---------------------------------------------
 
 #which region to run right now
-reg_code <- "CC"
+reg_code <- "NC"
 
 #their conditional metric file names, to be selected based on reg_code
 reg_files <- c(
   "SN" = "SN_conditional_20240617.csv",
   "SC" = "SC_conditional_20240617.csv",
   "CC" = "CC_conditional_20240617.csv", 
-  "NC" = "NC_conditional_202406xx.csv")
+  "NC" = "NC_conditional_NOFVS_20240628.csv")
 this_reg_file <- reg_files[[reg_code]]
 
 

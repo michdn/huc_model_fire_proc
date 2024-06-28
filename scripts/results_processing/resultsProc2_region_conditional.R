@@ -11,11 +11,11 @@ pacman::p_load(
 
 #region or folder name for variants/reruns #"SC", "SCbl", "SCbw", etc. 
 # for baseline/baseweather, make sure to align with settings below
-reg_code <- "CC"
+reg_code <- "NC"
 
 #Include FVS or not?
 # interim datasets may be created before FVS summary data available 
-incl_FVS <- TRUE
+incl_FVS <- FALSE
 # running for BASEWEATHER results 
 #  (only relevant when adding FVS results as baseline gets used for baseweather too)
 run_baseweather <- FALSE
@@ -214,7 +214,9 @@ if (incl_FVS){
   #   mutate(missing = ifelse(is.na(run.y), TRUE, FALSE)) %>% 
   #   filter(missing)
   
-} #end incl_FVS
+} else {
+  res_all <- res
+}#end incl_FVS
 
 
 ### Add in area and timing groups ----------------------------
@@ -278,4 +280,63 @@ write_csv(res_all,
                     file_nm))
 
 
-
+### error checking --------------
+# cbp %>% group_by(HUC12, Year) %>% summarize(count = n()) %>% head()
+# #each HUC should have 21600 rows (with data). 5400 per year. 
+# 
+# cbp_nc <- cbp %>% 
+#   as_tibble() %>% 
+#   filter(is.na(huc_burned_frac))
+# #NC 42,768 rows with NA
+# 
+# cbp_nc %>% group_by(HUC12) %>% summarize(count = n())
+# # HUC12        count
+# # 180101070302 21492
+# # 180101070401 21276
+# 
+# cbp_nc %>% group_by(HUC12, Priority) %>% summarize(count = n())
+# cbp_nc %>% group_by(HUC12, TxType) %>% summarize(count = n())
+# cbp_nc %>% group_by(HUC12, TxIntensity) %>% summarize(count = n())
+# cbp_nc %>% group_by(HUC12, Year) %>% summarize(count = n())
+# 
+# cbp_nc %>% 
+#   group_by(HUC12, Priority, TxType, TxIntensity, Year) %>% 
+#   summarize(count = n()) %>% View()
+# 
+# # 180101070302 always has 199 fires NA
+# # 180101070401 always has 197 fires NA
+# 
+# cfl %>% as_tibble() %>% filter(is.na(huc_avg_fl)) %>% 
+#   group_by(HUC12) %>% summarize(count = n())
+# 
+# nb_hucs %>%  
+#   filter(huc12 %in% c("180101070302","180101070401"))
+# nb_hucs %>% arrange(desc(nonburn_perc))
+# 
+# igni <- readRDS("results/extracts/NC_errors/NC_ignitions_from_sql.RDS")
+# igni %>% 
+#   as_tibble() %>% 
+#   filter(HUC12 %in% c("180101070302","180101070401")) %>% 
+#   group_by(HUC12, Priority, TxIntensity, TxType, Year) %>% 
+#   summarize(count = n()) %>% 
+#   filter(count < 200)
+# 
+# cbp %>% 
+#   as_tibble() %>% 
+#   filter(HUC12 %in% c("180101070302","180101070401")) %>% 
+#   #filter(!is.na(huc_burned_frac)) %>% filter(huc_burned_frac > 0)
+#   group_by(HUC12, Priority, TxIntensity, TxType, Year, huc_burned_frac) %>% 
+#   summarize(count = n()) %>% View()
+# 
+# cbp %>% 
+#   as_tibble() %>% 
+#   filter(HUC12 %in% c("180101070302","180101070401")) %>% 
+#   filter(huc_burned_frac == 0) %>% 
+#   group_by(HUC12, fire_i) %>% 
+#   summarize(count = n())
+# 
+# 
+# igni %>% 
+#   as_tibble() #%>% View()
+#   filter(HUC12 == "180101070302") # %>% View()
+#   #group_by(fbfm40_number) %>% summarize(count = n())

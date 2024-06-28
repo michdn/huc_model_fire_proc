@@ -6,7 +6,8 @@
 ### Libraries -------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
-  tidyverse)
+  tidyverse,
+  arrow)
 
 
 ### User settings ---------------------------------------------
@@ -18,25 +19,30 @@ dir.create(output_folder, recursive = TRUE)
 
 
 #region results
-sn <- read_csv(file.path(input_folder, "SN_absolute_202405xx.csv")) %>% 
+sn <- read_csv(file.path(input_folder, "SN_absolute_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-sc <- read_csv(file.path(input_folder, "SC_absolute_202406xx.csv")) %>% 
+sc <- read_csv(file.path(input_folder, "SC_absolute_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-cc <- read_csv(file.path(input_folder, "CC_absolute_202406xx.csv")) %>% 
+cc <- read_csv(file.path(input_folder, "CC_absolute_20240617.csv")) %>% 
 mutate(HUC12 = as.character(HUC12))
 
-nc <- read_csv(file.path(input_folder, "NC_absolute_202406xx.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12))
+# nc <- read_csv(file.path(input_folder, "NC_absolute_202406xx.csv")) %>% 
+#   mutate(HUC12 = as.character(HUC12))
 
 
 ### Bind and save -------------------------------------------
 
-cube <- bind_rows(sn, sc, cc, nc)
+cube <- bind_rows(sn, sc, cc) #, nc
 
 stamp <- format(Sys.time(), "%Y%m%d")
 
 write_csv(cube,
           file.path(output_folder,
-                    paste0('datacube_', "interim_", stamp, '.csv')))
+                    paste0("datacube_", "interim_SNSCCC_", stamp, ".csv")))
+
+arrow::write_parquet(x = cube,
+          sink = file.path(output_folder,
+                    paste0("datacube_", "interim_SNSCCC_", stamp, ".parquet")))
+

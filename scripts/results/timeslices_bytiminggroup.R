@@ -16,9 +16,14 @@ folder_out <- file.path('plots', 'timeslices')
 
 ### Base Data import -------------------------------------------
 
+# res_orig <- read_csv(file.path("results",
+#                                "datacube", 
+#                                "datacube_interim_SNSCCC_20240617.csv")) %>% 
+#   mutate(HUC12 = as.character(HUC12)) 
+
 res_orig <- read_csv(file.path("results",
-                               "datacube", 
-                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
+                               "absolute", 
+                               "NC_absolute_20240628.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
 
 

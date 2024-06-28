@@ -39,7 +39,7 @@ rm_gc_big <- FALSE
 # where to find the sql output files
 # SN, SC, CC, NC
 # reg_group is just the name of the folder, so things like e.g. SCbl work 
-reg_group <- "CC" 
+reg_group <- "NC" 
 
 
 results_folder <- file.path("R:",
