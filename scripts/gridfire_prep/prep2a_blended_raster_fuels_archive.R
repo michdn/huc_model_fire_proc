@@ -63,7 +63,7 @@ fvs_names <- fvs_names_snreduced %>%
               filter(grepl('_SN_', name)) %>% 
               mutate(fuel="FVS_Fuels2"))
 
-#108 - 6 + 27 = 129 for SN, 108 for all others
+#108 - 6 + 27 = 129 for SN, (really 108 for all others, but didn't separate here)
 
 fvs_names <- fvs_names %>% 
   #temporary just for nice sorting to check
@@ -109,7 +109,7 @@ if (region_to_run == "SN"){
   fuel_files_rem <- fuel_files_temp
 }
 
-#should be 540 for a region (SN different, just the new ones)
+#should be 540 for a region (SN, NC different, just the new ones)
 length(fuel_files_rem)
 # SN. 
 # FVS_Fuels2: 
