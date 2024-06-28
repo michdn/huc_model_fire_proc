@@ -21,10 +21,10 @@ dir.create(output_folder, recursive = TRUE)
 sn <- read_csv(file.path(input_folder, "SN_absolute_20240617.csv")) %>% 
   mutate(HUC12 = as.character(HUC12))
 
-sc <- read_csv(file.path(input_folder, "SC_absolute_20240617.csv")) %>% 
+sc <- read_csv(file.path(input_folder, "SC_absolute_20240617.csv")) %>%
   mutate(HUC12 = as.character(HUC12))
 
-cc <- read_csv(file.path(input_folder, "CC_absolute_20240617.csv")) %>% 
+cc <- read_csv(file.path(input_folder, "CC_absolute_20240617.csv")) %>%
 mutate(HUC12 = as.character(HUC12))
 
 # nc <- read_csv(file.path(input_folder, "NC_absolute_202406xx.csv")) %>% 
