@@ -38,12 +38,17 @@ pacman::p_load(
 
 ### Base Data import -------------------------------------------
 
+# res_orig <- read_csv(file.path("results",
+#                                "202403_runs",
+#                                "datacube", 
+#                                "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
+#   mutate(HUC12 = as.character(HUC12)) %>% 
+#   filter(!Priority %in% c("baseline", "baseweather")) 
+
 res_orig <- read_csv(file.path("results",
-                               "202403_runs",
-                               "datacube", 
-                               "datacube_interim_sc_cc_sn_bl_bw_20240513.csv")) %>% 
-  mutate(HUC12 = as.character(HUC12)) %>% 
-  filter(!Priority %in% c("baseline", "baseweather")) 
+                               "datacube",
+                               "datacube_interim_SNSCCC_20240617.csv")) %>%
+  mutate(HUC12 = as.character(HUC12))
 
 
 #spatial
@@ -168,9 +173,9 @@ res_r <- res_r_counts %>%
 
 res_best <- res_r %>% 
   #selecting top (lowest) summed rank by rel_trt_yr, 
-  # ties broken by expFlame, expPcActive, expBurn, [still 31 HUC-reltrtyrs with ties in SC]
-  # then by TxIntensity (500k>1m>2m), [still 30]
-  # then by TxType (1, 4, 6/7), [still 5]
+  # ties broken by expFlame, expPcActive, expBurn, [still 31 HUC-reltrtyrs with ties in old SC. 107 in new SC,CC,SN]
+  # then by TxIntensity (500k>1m>2m), [still 30 old SC. still 107 new SC,CC,SN]
+  # then by TxType (1, 4, 6/7), [still 5 old SC. 54 new SC,CC,SN]
   # then by Priority (Fire, WUI, Hybrid)
   group_by(Region, HUC12, rel_trt_yr) %>% 
   slice_min(order_by = tibble(rank_sum, 
@@ -178,10 +183,10 @@ res_best <- res_r %>%
                               TxIntensity, TxType, Priority), 
             n = 1)
 
-# res_best %>% 
-#   group_by(HUC12, rel_trt_yr) %>% 
-#   summarize(count_rows=n()) %>% 
-#   filter(!count_rows == 1)
+# res_best %>%
+#   group_by(HUC12, rel_trt_yr) %>%
+#   summarize(count_rows=n()) %>%
+#   filter(!count_rows == 1) 
 
 
 ### Loop by region ----------------------------------------------
