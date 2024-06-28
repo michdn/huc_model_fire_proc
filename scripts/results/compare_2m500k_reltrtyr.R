@@ -23,9 +23,14 @@ inv_text_color <- "gold3"
 
 ### Results import -------------------------------------------
 
+# res_orig <- read_csv(file.path("results",
+#                                "datacube", 
+#                                "datacube_interim_SNSCCC_20240617.csv")) %>% 
+#   mutate(HUC12 = as.character(HUC12)) 
+
 res_orig <- read_csv(file.path("results",
-                               "datacube", 
-                               "datacube_interim_SNSCCC_20240617.csv")) %>% 
+                               "absolute", 
+                               "NC_absolute_20240628.csv")) %>% 
   mutate(HUC12 = as.character(HUC12)) 
 
 
@@ -291,10 +296,26 @@ for (r in seq_along(regions)){
 
 res %>%
   dplyr::filter(hacfl_2m500k_pc > 100) %>%
-  select(Region, HUC12) %>%
+  dplyr::select(Region, HUC12) %>%
   distinct()
   #write_csv(file = "qajun/extreme_inversion_185.csv")
-# #100%: 14, SN(10), CC(3), SC(1)
+# #100%: 14, SN(10), CC(3), SC(1);      NC (7)
 # #150%: 10
 # #200%: 8
 # #185: 9
+
+# nc_super <- "180201040301"
+# 
+# res %>% 
+#   arrange(desc(hacfl_2m500k_pc)) %>% 
+#   filter(HUC12 == nc_super) %>% 
+#   dplyr::select(HUC12, Priority, TxIntensity, TxType, Year, 
+#                 hacfl_500k, hacfl_2m, hacfl_2m500k_pc)
+# 
+# #load cbp, cfl
+# cfl %>% 
+#   filter(HUC12 == nc_super,
+#          Priority == "WUI",
+#          TxIntensity == "2m",
+#          Year == 2034)
+
