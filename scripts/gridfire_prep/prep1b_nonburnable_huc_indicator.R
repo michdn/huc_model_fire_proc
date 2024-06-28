@@ -1,6 +1,9 @@
 # Script to correct huc_indicator.tif 
 #  To nonburnable area for selected HUCs
 
+# Note: script updated 2024-06-27 post Jun MAS runs to fix
+#   NoData issue on very western coastal HUCs (extends into ocean)
+#   NC 180101070302 and 180101070401
 
 ### Libraries -------------------------------------------------
 
@@ -18,10 +21,13 @@ pacman::p_load(
 #                            "reruns_nonburn", region_to_run)
 
 # region_to_run is actually folder name
+
 region_to_run <- "NC"
-region_folder <- file.path("E:", "MAS", "gridfire_prep", 
+region_folder <- file.path("E:", "MAS", "gridfire_prep",
                            "hucs_gf_noweather_nofuel", region_to_run)
 
+# region_to_run <- "NC"
+# region_folder <- file.path("qajun", "nc_copies", "nb_test")
 
 ## FML ------------------------------------------------------
 
@@ -57,11 +63,12 @@ fml_nb <- terra::rast("other_datasets/LC22_F40_220_CA_NBbinary.tif")
 # Good HUC area 1 - 0 = 1
 # and outside of HUC 0 - 0 = 0 or 0 - 1 = -1. 
 # Then classify -1 to 0. 
+# Update 2024-06-27: recode NoData arising from LC22 calc above to 0
 
 #hucs to modify, from scripts/qa_misc/hucs_nonburnable.R
 nb_hucs <- readRDS("data/nonburnable_rerun_list.RDS") %>% 
   filter(region == region_to_run)
-
+  #filter(huc12 %in% c("180101070302", "180101070401"))
 
 ## Collect huc indicators to modify ------------------------
 
@@ -89,11 +96,11 @@ for (i in 1:nrow(target_folders)){
                         method="near", 
                         threads=T)
   
-  #subtract and reclassify -1 back to 0
+  #subtract and reclassify -1 back to 0; ensure no NoData
   idiff <- this_indicator - this_fmlnb
   
   updated <- terra::classify(idiff, 
-                             matrix(c(-1, 0), ncol=2))
+                             matrix(c(-1, NA, 0, 0), ncol=2))
   
   #save out updated indicator, overwriting
   writeRaster(updated, this_target[["target"]],
@@ -104,10 +111,19 @@ for (i in 1:nrow(target_folders)){
 }
 
 
-write_csv(target_folders %>% 
-            dplyr::select(huc12, target, update_time), 
-          file = file.path("logs", 
-                           paste0("log_indicator_update_", 
-                                  region_to_run, 
+write_csv(target_folders %>%
+            dplyr::select(huc12, target, update_time),
+          file = file.path("logs",
+                           paste0("log_indicator_update_",
+                                  region_to_run,
                                   ".csv")),
           append = TRUE)
+
+# write_csv(target_folders %>% 
+#             dplyr::select(huc12, target, update_time), 
+#           file = file.path("qajun",
+#                            "nc_copies",
+#                            paste0("log_indicator_update_", 
+#                                   region_to_run, 
+#                                   ".csv")),
+#           append = TRUE)
